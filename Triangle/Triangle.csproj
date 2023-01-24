@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net7.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+	<EmccExtraArgs>E:\GitHub\wasm_webgpu\build\libwebgpu.a --js-library E:\GitHub\wasm_webgpu\lib\lib_webgpu.js ..\Interop\ClassLibrary1\constants.c -s USE_SDL=0</EmccExtraArgs>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Interop\ClassLibrary1\WebGpu.csproj" />
+  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.DotNet.ILCompiler.LLVM" Version="7.0.0-*" />
+		<PackageReference Include="runtime.win-x64.Microsoft.DotNet.ILCompiler.LLVM" Version="7.0.0-*" />
+	</ItemGroup>
+</Project>
