@@ -30,7 +30,7 @@ namespace WebGpuSample
         [UnmanagedCallersOnly]
         static int raf(double time, void* userData)
         {
-            WGpuCommandEncoder encoder = Interop.wgpu_device_create_command_encoder(device, (WGpuCommandEncoderDescriptor *)IntPtr.Zero);
+            WGpuCommandEncoder encoder = Interop.wgpu_device_create_command_encoder_simple(device);
 
             WGpuRenderPassColorAttachment colorAttachment = GetWGPU_RENDER_PASS_COLOR_ATTACHMENT_DEFAULT_INITIALIZER();
             colorAttachment.view = wgpu_texture_create_view(wgpu_canvas_context_get_current_texture(canvasContext), (WGpuTextureViewDescriptor*)IntPtr.Zero);
@@ -39,7 +39,7 @@ namespace WebGpuSample
             passDesc.numColorAttachments = 1;
             passDesc.colorAttachments = &colorAttachment;
 
-            WGpuRenderPassEncoder pass = wgpu_command_encoder_begin_render_pass(encoder, &passDesc);
+            WGpuRenderPassEncoder pass = wgpu_command_encoder_begin_render_pass(encoder, ref passDesc);
             wgpu_render_pass_encoder_set_pipeline(pass, renderPipeline);
             wgpu_render_pass_encoder_draw(pass, 3, 1, 0, 0);
             wgpu_render_pass_encoder_end(pass);

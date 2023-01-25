@@ -1,5 +1,4 @@
-﻿using System.Reflection.Metadata;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 
 namespace WebGpu
 {
@@ -18,11 +17,22 @@ namespace WebGpu
     using WGpuCommandBuffer = WebGpu.WGpuObjectBase;
     using WGpuPipelineLayout = WebGpu.WGpuObjectBase;
     using WGpuShaderModule = WebGpu.WGpuObjectBase;
+    using WGpuBuffer = WebGpu.WGpuObjectBase;
+    using WGpuBindGroupLayout = WebGpu.WGpuObjectBase;
+    using WGpuBindGroup = WebGpu.WGpuObjectBase;
+    using WGpuImageBitmap = WebGpu.WGpuObjectBase;
+    using WGpuComputePipeline = WebGpu.WGpuObjectBase;
+    using WGpuComputePassEncoder = WebGpu.WGpuObjectBase;
 
     [StructLayout(LayoutKind.Sequential)]
     public struct WGpuObjectBase
     {
         public IntPtr ptr;
+
+        public WGpuObjectBase(int value)
+        {
+            ptr = new IntPtr(value);
+        }
     }
 
 
@@ -187,12 +197,12 @@ namespace WebGpu
         {
             // See the table in https://www.w3.org/TR/webgpu/#limits for the minimum/maximum
             // default values for these limits.
-        
+
             // 64-bit fields must be present first before the 32-bit fields in this struct.
             ulong maxUniformBufferBindingSize; // required >= 16384
             ulong maxStorageBufferBindingSize; // required >= 128*1024*1024 (128MB)
             ulong maxBufferSize;               // required >= 256*1024*1024 (256MB)
-        
+
             int maxTextureDimension1D; // required >= 8192
             int maxTextureDimension2D; // required >= 8192
             int maxTextureDimension3D; // required >= 2048
@@ -265,11 +275,13 @@ namespace WebGpu
         //             "display-p3"
         //         };
         //         */
-        //         typedef int HTML_PREDEFINED_COLOR_SPACE;
-        // #define HTML_PREDEFINED_COLOR_SPACE_INVALID 0
-        // #define HTML_PREDEFINED_COLOR_SPACE_SRGB 1
-        // #define HTML_PREDEFINED_COLOR_SPACE_DISPLAY_P3 2
-        //
+        public enum HTML_PREDEFINED_COLOR_SPACE
+        {
+            // #define HTML_PREDEFINED_COLOR_SPACE_INVALID 0
+            // #define HTML_PREDEFINED_COLOR_SPACE_SRGB 1
+            // #define HTML_PREDEFINED_COLOR_SPACE_DISPLAY_P3 2
+        }
+
         //         /*
         //         [Exposed=(Window, DedicatedWorker), SecureContext]
         //         interface GPUAdapterInfo {
@@ -309,7 +321,8 @@ namespace WebGpu
         // // passed to the callback will then be zero.
         // // options: may be null to request an adapter without specific options.
         [DllImport("*")]
-        /* EM_BOOL */ public static extern int navigator_gpu_request_adapter_async(ref WGpuRequestAdapterOptions options, delegate* unmanaged <WGpuAdapter, IntPtr, void> adapterCallback, IntPtr userData);
+        /* EM_BOOL */
+        public static extern int navigator_gpu_request_adapter_async(ref WGpuRequestAdapterOptions options, delegate* unmanaged<WGpuAdapter, IntPtr, void> adapterCallback, IntPtr userData);
         //         // Requests a WebGPU adapter synchronously. Requires building with -sASYNCIFY=1 linker flag to work.
         //         // options: may be null to request an adapter without specific options.
         //         WGpuAdapter navigator_gpu_request_adapter_sync(const WGpuRequestAdapterOptions* options);
@@ -339,7 +352,8 @@ namespace WebGpu
             //       state and powerPreference, the user agent is likely to select the same adapter.
             /* WGPU_POWER_PREFERENCE */
             public int powerPreference;
-            /* EM_BOOL */ int forceFallbackAdapter;
+            /* EM_BOOL */
+            int forceFallbackAdapter;
         }
         // extern const WGpuRequestAdapterOptions WGPU_REQUEST_ADAPTER_OPTIONS_DEFAULT_INITIALIZER;
         //
@@ -422,13 +436,14 @@ namespace WebGpu
         // */
         [StructLayout(LayoutKind.Sequential)]
         public struct WGpuDeviceDescriptor
-                {
-                    /* WGPU_FEATURES_BITFIELD */ int requiredFeatures;
-                    int _explicitPaddingFor8BytesAlignedSize; // alignof(WGpuSupportedLimits) is 64-bit, hence explicitly show a padding here.
-                    WGpuSupportedLimits requiredLimits;
-                    WGpuQueueDescriptor defaultQueue;
-                    int _explicitPaddingFor8BytesAlignedSize2;
-                }
+        {
+            /* WGPU_FEATURES_BITFIELD */
+            int requiredFeatures;
+            int _explicitPaddingFor8BytesAlignedSize; // alignof(WGpuSupportedLimits) is 64-bit, hence explicitly show a padding here.
+            WGpuSupportedLimits requiredLimits;
+            WGpuQueueDescriptor defaultQueue;
+            int _explicitPaddingFor8BytesAlignedSize2;
+        }
         // extern const WGpuDeviceDescriptor WGPU_DEVICE_DESCRIPTOR_DEFAULT_INITIALIZER;
         //
         //         /*
@@ -473,31 +488,38 @@ namespace WebGpu
         [DllImport("*")]
         public static extern WGpuQueue wgpu_device_get_queue(WGpuDevice device);
         //
-        //         WGpuBuffer wgpu_device_create_buffer(WGpuDevice device, const WGpuBufferDescriptor* bufferDesc NOTNULL);
-        // WGpuTexture wgpu_device_create_texture(WGpuDevice device, const WGpuTextureDescriptor* textureDesc NOTNULL);
+        [DllImport("*")]
+        public static extern WGpuBuffer wgpu_device_create_buffer(WGpuDevice device, ref WGpuBufferDescriptor bufferDesc /*NOTNULL */);
+
+        [DllImport("*")]
+        public static extern WGpuTexture wgpu_device_create_texture(WGpuDevice device, ref WGpuTextureDescriptor textureDesc /* NOTNULL */);
         // WGpuSampler wgpu_device_create_sampler(WGpuDevice device, const WGpuSamplerDescriptor* samplerDesc NOTNULL);
         // WGpuExternalTexture wgpu_device_import_external_texture(WGpuDevice device, const WGpuExternalTextureDescriptor* externalTextureDesc NOTNULL);
         //
-        // // N.b. not currently using signature WGpuBindGroupLayout wgpu_device_create_bind_group_layout(WGpuDevice device, const WGpuBindGroupLayoutDescriptor *bindGroupLayoutDesc);
-        // // since WGpuBindGroupLayoutDescriptor is a single element struct consisting only of a single array. (if it is expanded in the future, switch to using that signature)
-        // WGpuBindGroupLayout wgpu_device_create_bind_group_layout(WGpuDevice device, const WGpuBindGroupLayoutEntry* bindGroupLayoutEntries, int numEntries);
+        // N.b. not currently using signature WGpuBindGroupLayout wgpu_device_create_bind_group_layout(WGpuDevice device, const WGpuBindGroupLayoutDescriptor *bindGroupLayoutDesc);
+        // since WGpuBindGroupLayoutDescriptor is a single element struct consisting only of a single array. (if it is expanded in the future, switch to using that signature)
+        [DllImport("*")]
+        public static extern WGpuBindGroupLayout wgpu_device_create_bind_group_layout(WGpuDevice device, WGpuBindGroupLayoutEntry* bindGroupLayoutEntries, int numEntries);
         //
-        //         // N.b. not currently using signature WGpuPipelineLayout wgpu_device_create_pipeline_layout(WGpuDevice device, const WGpuPipelineLayoutDescriptor *pipelineLayoutDesc);
-        //         // since WGpuPipelineLayoutDescriptor is a single element struct consisting only of a single array. (if it is expanded in the future, switch to using that signature)
-        //         WGpuPipelineLayout wgpu_device_create_pipeline_layout(WGpuDevice device, const WGpuBindGroupLayout* bindGroupLayouts, int numLayouts);
+        // N.b. not currently using signature WGpuPipelineLayout wgpu_device_create_pipeline_layout(WGpuDevice device, const WGpuPipelineLayoutDescriptor *pipelineLayoutDesc);
+        // since WGpuPipelineLayoutDescriptor is a single element struct consisting only of a single array. (if it is expanded in the future, switch to using that signature)
+        [DllImport("*")]
+        public static extern WGpuPipelineLayout wgpu_device_create_pipeline_layout(WGpuDevice device, ref WGpuBindGroupLayout bindGroupLayouts, int numLayouts);
         //
-        //         // N.b. not currently using signature WGpuBindGroup wgpu_device_create_bind_group(WGpuDevice device, const WGpuBindGroupDescriptor *bindGroupDesc);
-        //         // since WGpuBindGroupDescriptor is a such a light struct. (if it is expanded in the future, switch to using that signature)
-        //         WGpuBindGroup wgpu_device_create_bind_group(WGpuDevice device, WGpuBindGroupLayout bindGroupLayout, const WGpuBindGroupEntry* entries, int numEntries);
+        // N.b. not currently using signature WGpuBindGroup wgpu_device_create_bind_group(WGpuDevice device, const WGpuBindGroupDescriptor *bindGroupDesc);
+        // since WGpuBindGroupDescriptor is a such a light struct. (if it is expanded in the future, switch to using that signature)
+        [DllImport("*")]
+        public static extern WGpuBindGroup wgpu_device_create_bind_group(WGpuDevice device, WGpuBindGroupLayout bindGroupLayout, WGpuBindGroupEntry* entries, int numEntries);
         //
         [DllImport("*")]
         public static extern WGpuShaderModule wgpu_device_create_shader_module(WGpuDevice device, ref WGpuShaderModuleDescriptor shaderModuleDesc /*NOTNULL*/);
         //
         // typedef void (* WGpuCreatePipelineCallback) (WGpuDevice device, WGpuPipelineBase pipeline, void* userData);
         //
-        // // N.b. not currently using signature WGpuComputePipeline wgpu_device_create_compute_pipeline(WGpuDevice device, const WGpuComputePipelineDescriptor *computePipelineDesc);
-        // // since WGpuComputePipelineDescriptor is a such a light struct. (if it is expanded in the future, switch to using that signature)
-        // WGpuComputePipeline wgpu_device_create_compute_pipeline(WGpuDevice device, WGpuShaderModule computeModule, const char* entryPoint NOTNULL, WGpuPipelineLayout layout, const WGpuPipelineConstant* constants, int numConstants);
+        // N.b. not currently using signature WGpuComputePipeline wgpu_device_create_compute_pipeline(WGpuDevice device, const WGpuComputePipelineDescriptor *computePipelineDesc);
+        // since WGpuComputePipelineDescriptor is a such a light struct. (if it is expanded in the future, switch to using that signature)
+        [DllImport("*", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        public static extern WGpuComputePipeline wgpu_device_create_compute_pipeline(WGpuDevice device, WGpuShaderModule computeModule, string entryPoint /*NOTNULL*/, WGpuPipelineLayout layout, WGpuPipelineConstant* constants, int numConstants);
         //         void wgpu_device_create_compute_pipeline_async(WGpuDevice device, WGpuShaderModule computeModule, const char* entryPoint NOTNULL, WGpuPipelineLayout layout, const WGpuPipelineConstant* constants, int numConstants, WGpuCreatePipelineCallback callback, void* userData);
         //
         [DllImport("*")]
@@ -505,9 +527,10 @@ namespace WebGpu
         // void wgpu_device_create_render_pipeline_async(WGpuDevice device, const WGpuRenderPipelineDescriptor* renderPipelineDesc NOTNULL, WGpuCreatePipelineCallback callback, void* userData);
         //
         [DllImport("*")]
-        public static extern WGpuCommandEncoder wgpu_device_create_command_encoder(WGpuDevice device, WGpuCommandEncoderDescriptor* commandEncoderDesc);
+        public static extern WGpuCommandEncoder wgpu_device_create_command_encoder(WGpuDevice device, ref WGpuCommandEncoderDescriptor commandEncoderDesc);
         //         // Same as above, but without any descriptor args.
-        //         WGpuCommandEncoder wgpu_device_create_command_encoder_simple(WGpuDevice device);
+        [DllImport("*")]
+        public static extern WGpuCommandEncoder wgpu_device_create_command_encoder_simple(WGpuDevice device);
         //
         //         WGpuRenderBundleEncoder wgpu_device_create_render_bundle_encoder(WGpuDevice device, const WGpuRenderBundleEncoderDescriptor* renderBundleEncoderDesc NOTNULL);
         //
@@ -535,7 +558,7 @@ namespace WebGpu
         //
         //         // TODO: Add error status to map callback for when mapAsync() promise rejects.
         //         typedef void (* WGpuBufferMapCallback) (WGpuBuffer buffer, void* userData, WGPU_MAP_MODE_FLAGS mode, /*double_int53_tL */ double offset, /*double_int53_tL */ double size);
-        // #define WGPU_MAP_MAX_LENGTH -1
+        public const double WGPU_MAP_MAX_LENGTH = -1;
         // void wgpu_buffer_map_async(WGpuBuffer buffer, WGpuBufferMapCallback callback, void* userData, WGPU_MAP_MODE_FLAGS mode, /*double_int53_tL */ double offset _WGPU_DEFAULT_VALUE(0), /*double_int53_tL */ double size _WGPU_DEFAULT_VALUE(WGPU_MAP_MAX_LENGTH));
         //
         // // Maps the given WGpuBuffer synchronously. Requires building with -sASYNCIFY=1 linker flag to work.
@@ -543,12 +566,16 @@ namespace WebGpu
         //
         // #define WGPU_BUFFER_GET_MAPPED_RANGE_FAILED ((/*double_int53_tL */ double)-1)
         //
-        // // Calls buffer.getMappedRange(). Returns `startOffset`, which is used as an ID token to wgpu_buffer_read/write_mapped_range().
-        // // If .getMappedRange() fails, the value WGPU_BUFFER_GET_MAPPED_RANGE_FAILED (-1) will be returned.
-        // /*double_int53_tL */ double wgpu_buffer_get_mapped_range(WGpuBuffer buffer, /*double_int53_tL */ double startOffset, /*double_int53_tL */ double size _WGPU_DEFAULT_VALUE(WGPU_MAP_MAX_LENGTH));
+        // Calls buffer.getMappedRange(). Returns `startOffset`, which is used as an ID token to wgpu_buffer_read/write_mapped_range().
+        // If .getMappedRange() fails, the value WGPU_BUFFER_GET_MAPPED_RANGE_FAILED (-1) will be returned.
+        [DllImport("*")]
+        /*double_int53_tL */
+        public static extern double wgpu_buffer_get_mapped_range(WGpuBuffer buffer, /*double_int53_tL */ double startOffset, /*double_int53_tL */ double size /*_WGPU_DEFAULT_VALUE(WGPU_MAP_MAX_LENGTH) */);
         //         void wgpu_buffer_read_mapped_range(WGpuBuffer buffer, /*double_int53_tL */ double startOffset, /*double_int53_tL */ double subOffset, void* dst NOTNULL, /*double_int53_tL */ double size);
-        //         void wgpu_buffer_write_mapped_range(WGpuBuffer buffer, /*double_int53_tL */ double startOffset, /*double_int53_tL */ double subOffset, const void* src NOTNULL, /*double_int53_tL */ double size);
-        //         void wgpu_buffer_unmap(WGpuBuffer buffer);
+        [DllImport("*")]
+        public static extern void wgpu_buffer_write_mapped_range(WGpuBuffer buffer, /*double_int53_tL */ double startOffset, /*double_int53_tL */ double subOffset, void* src /*NOTNULL*/, /*double_int53_tL */ double size);
+        [DllImport("*")]
+        public static extern void wgpu_buffer_unmap(WGpuBuffer buffer);
         //
         //         // Getters for retrieving buffer properties:
         //         /*double_int53_tL */ double wgpu_buffer_size(WGpuBuffer buffer);
@@ -575,13 +602,15 @@ namespace WebGpu
         //             boolean mappedAtCreation = false;
         //         };
         //         */
-        //         typedef struct WGpuBufferDescriptor
-        //         {
-        //             uint64_t size;
-        //             WGPU_BUFFER_USAGE_FLAGS usage;
-        //             /* EM_BOOL */ int mappedAtCreation; // Note: it is valid to set mappedAtCreation to true without MAP_READ or MAP_WRITE in usage. This can be used to set the buffer’s initial data.
-        //         }
-        //         WGpuBufferDescriptor;
+        [StructLayout(LayoutKind.Sequential)]
+        public struct WGpuBufferDescriptor
+        {
+            public ulong size;
+
+            public WGPU_BUFFER_USAGE_FLAGS usage;
+            /* EM_BOOL */
+            public int mappedAtCreation; // Note: it is valid to set mappedAtCreation to true without MAP_READ or MAP_WRITE in usage. This can be used to set the buffer’s initial data.
+        }
         //
         // /*
         // typedef [EnforceRange] unsigned long GPUBufferUsageFlags;
@@ -599,18 +628,21 @@ namespace WebGpu
         //     const GPUFlagsConstant QUERY_RESOLVE = 0x0200;
         // };
         // */
-        // typedef int WGPU_BUFFER_USAGE_FLAGS;
-        // #define WGPU_BUFFER_USAGE_MAP_READ      0x0001
-        // #define WGPU_BUFFER_USAGE_MAP_WRITE     0x0002
-        // #define WGPU_BUFFER_USAGE_COPY_SRC      0x0004
-        // #define WGPU_BUFFER_USAGE_COPY_DST      0x0008
-        // #define WGPU_BUFFER_USAGE_INDEX         0x0010
-        // #define WGPU_BUFFER_USAGE_VERTEX        0x0020
-        // #define WGPU_BUFFER_USAGE_UNIFORM       0x0040
-        // #define WGPU_BUFFER_USAGE_STORAGE       0x0080
-        // #define WGPU_BUFFER_USAGE_INDIRECT      0x0100
-        // #define WGPU_BUFFER_USAGE_QUERY_RESOLVE 0x0200
-        //
+        [Flags]
+        public enum WGPU_BUFFER_USAGE_FLAGS
+        {
+            WGPU_BUFFER_USAGE_MAP_READ = 0x0001,
+            WGPU_BUFFER_USAGE_MAP_WRITE = 0x0002,
+            WGPU_BUFFER_USAGE_COPY_SRC = 0x0004,
+            WGPU_BUFFER_USAGE_COPY_DST = 0x0008,
+            WGPU_BUFFER_USAGE_INDEX = 0x0010,
+            WGPU_BUFFER_USAGE_VERTEX = 0x0020,
+            WGPU_BUFFER_USAGE_UNIFORM = 0x0040,
+            WGPU_BUFFER_USAGE_STORAGE = 0x0080,
+            WGPU_BUFFER_USAGE_INDIRECT = 0x0100,
+            WGPU_BUFFER_USAGE_QUERY_RESOLVE = 0x0200
+        }
+
         //         /*
         //         typedef [EnforceRange] unsigned long GPUMapModeFlags;
         //         [Exposed=(Window, DedicatedWorker)]
@@ -647,7 +679,8 @@ namespace WebGpu
         [DllImport("*")]
         public static extern WGpuTextureView wgpu_texture_create_view(WGpuTexture texture, WGpuTextureViewDescriptor* textureViewDesc /*_WGPU_DEFAULT_VALUE(0) */);
         // // Same as above, but does not take any descriptor args.
-        // WGpuTextureView wgpu_texture_create_view_simple(WGpuTexture texture);
+        [DllImport("*")]
+        public static extern WGpuTextureView wgpu_texture_create_view_simple(WGpuTexture texture);
         //
         //         // Getters for retrieving texture properties:
         //         int wgpu_texture_width(WGpuTexture texture);
@@ -669,20 +702,24 @@ namespace WebGpu
         //             sequence<GPUTextureFormat> viewFormats = [];
         //         };
         //         */
-        //         typedef struct WGpuTextureDescriptor
-        //         {
-        //             int width;
-        //             int height; // default = 1;
-        //             int depthOrArrayLayers; // default = 1;
-        //             int mipLevelCount; // default = 1;
-        //             int sampleCount; // default = 1;
-        //             WGPU_TEXTURE_DIMENSION dimension; // default = WGPU_TEXTURE_DIMENSION_2D
-        //             WGPU_TEXTURE_FORMAT format;
-        //             WGPU_TEXTURE_USAGE_FLAGS usage;
-        //             int numViewFormats;
-        //             WGPU_TEXTURE_FORMAT* viewFormats;
-        //         }
-        //         WGpuTextureDescriptor;
+        [StructLayout(LayoutKind.Sequential)]
+        public struct WGpuTextureDescriptor
+        {
+            public WGpuTextureDescriptor()
+            {
+            }
+
+            public uint width;
+            public uint height = 1; // default = 1;
+            public int depthOrArrayLayers = 1; // default = 1;
+            public int mipLevelCount = 1; // default = 1;
+            public int sampleCount = 1; // default = 1;
+            public WGPU_TEXTURE_DIMENSION dimension = WGPU_TEXTURE_DIMENSION.WGPU_TEXTURE_DIMENSION_2D; // default = WGPU_TEXTURE_DIMENSION_2D
+            public WGPU_TEXTURE_FORMAT format;
+            public WGPU_TEXTURE_USAGE_FLAGS usage;
+            public int numViewFormats;
+            public WGPU_TEXTURE_FORMAT* viewFormats;
+        }
         // extern const WGpuTextureDescriptor WGPU_TEXTURE_DESCRIPTOR_DEFAULT_INITIALIZER;
         //
         //         /*
@@ -692,10 +729,12 @@ namespace WebGpu
         //             "3d",
         //         };
         //         */
-        //         typedef int WGPU_TEXTURE_DIMENSION;
+        public enum WGPU_TEXTURE_DIMENSION
+        {
+            WGPU_TEXTURE_DIMENSION_2D = 2,
+        }
         // #define WGPU_TEXTURE_DIMENSION_INVALID 0
         // #define WGPU_TEXTURE_DIMENSION_1D 1
-        // #define WGPU_TEXTURE_DIMENSION_2D 2
         // #define WGPU_TEXTURE_DIMENSION_3D 3
         //
         //         /*
@@ -709,12 +748,15 @@ namespace WebGpu
         //             const GPUFlagsConstant RENDER_ATTACHMENT = 0x10;
         //         };
         //         */
-        //         typedef int WGPU_TEXTURE_USAGE_FLAGS;
-        // #define WGPU_TEXTURE_USAGE_COPY_SRC            0x01
-        // #define WGPU_TEXTURE_USAGE_COPY_DST            0x02
-        // #define WGPU_TEXTURE_USAGE_TEXTURE_BINDING     0x04
-        // #define WGPU_TEXTURE_USAGE_STORAGE_BINDING     0x08
-        // #define WGPU_TEXTURE_USAGE_RENDER_ATTACHMENT   0x10
+        [Flags]
+        public enum WGPU_TEXTURE_USAGE_FLAGS
+        {
+            WGPU_TEXTURE_USAGE_COPY_SRC           = 0x01,
+            WGPU_TEXTURE_USAGE_COPY_DST           = 0x02,
+            WGPU_TEXTURE_USAGE_TEXTURE_BINDING    = 0x04,
+            WGPU_TEXTURE_USAGE_STORAGE_BINDING    = 0x08,
+            WGPU_TEXTURE_USAGE_RENDER_ATTACHMENT =  0x10,
+        }
         //
         //         /*
         //         [Exposed=(Window, DedicatedWorker), SecureContext]
@@ -740,16 +782,13 @@ namespace WebGpu
         [StructLayout(LayoutKind.Sequential)]
         public struct WGpuTextureViewDescriptor
         {
-            /* WGPU_TEXTURE_FORMAT */
-            int format;
-            /* WGPU_TEXTURE_VIEW_DIMENSION */
-            int dimension;
-            /* WGPU_TEXTURE_ASPECT */
-            int aspect; // default = WGPU_TEXTURE_ASPECT_ALL
-            uint baseMipLevel; // default = 0
-            uint mipLevelCount;
-            uint baseArrayLayer; // default = 0
-            uint arrayLayerCount;
+            public WGPU_TEXTURE_FORMAT format;
+            public WGPU_TEXTURE_VIEW_DIMENSION dimension;
+            public WGPU_TEXTURE_ASPECT aspect; // default = WGPU_TEXTURE_ASPECT_ALL
+            public uint baseMipLevel; // default = 0
+            public uint mipLevelCount;
+            public uint baseArrayLayer; // default = 0
+            public uint arrayLayerCount;
         }
         // extern const WGpuTextureViewDescriptor WGPU_TEXTURE_VIEW_DESCRIPTOR_DEFAULT_INITIALIZER;
         //
@@ -763,14 +802,17 @@ namespace WebGpu
         //             "3d"
         //         };
         //         */
-        //         typedef int WGPU_TEXTURE_VIEW_DIMENSION;
-        // #define WGPU_TEXTURE_VIEW_DIMENSION_INVALID 0
-        // #define WGPU_TEXTURE_VIEW_DIMENSION_1D 1
-        // #define WGPU_TEXTURE_VIEW_DIMENSION_2D 2
-        // #define WGPU_TEXTURE_VIEW_DIMENSION_2D_ARRAY 3
-        // #define WGPU_TEXTURE_VIEW_DIMENSION_CUBE 4
-        // #define WGPU_TEXTURE_VIEW_DIMENSION_CUBE_ARRAY 5
-        // #define WGPU_TEXTURE_VIEW_DIMENSION_3D 6
+        public enum WGPU_TEXTURE_VIEW_DIMENSION
+        {
+            // #define WGPU_TEXTURE_VIEW_DIMENSION_INVALID 0
+            // #define WGPU_TEXTURE_VIEW_DIMENSION_1D 1
+            WGPU_TEXTURE_VIEW_DIMENSION_2D = 2
+            // #define WGPU_TEXTURE_VIEW_DIMENSION_2D_ARRAY 3
+            // #define WGPU_TEXTURE_VIEW_DIMENSION_CUBE 4
+            // #define WGPU_TEXTURE_VIEW_DIMENSION_CUBE_ARRAY 5
+            // #define WGPU_TEXTURE_VIEW_DIMENSION_3D 6
+        }
+
         //
         //         /*
         //         enum GPUTextureAspect {
@@ -779,11 +821,14 @@ namespace WebGpu
         //             "depth-only"
         //         };
         //         */
-        //         typedef int WGPU_TEXTURE_ASPECT;
-        // #define WGPU_TEXTURE_ASPECT_INVALID 0
-        // #define WGPU_TEXTURE_ASPECT_ALL 1
-        // #define WGPU_TEXTURE_ASPECT_STENCIL_ONLY 2
-        // #define WGPU_TEXTURE_ASPECT_DEPTH_ONLY 3
+        public enum WGPU_TEXTURE_ASPECT
+        {
+            // #define WGPU_TEXTURE_ASPECT_INVALID 0
+            // #define WGPU_TEXTURE_ASPECT_ALL 1
+            // #define WGPU_TEXTURE_ASPECT_STENCIL_ONLY 2
+            // #define WGPU_TEXTURE_ASPECT_DEPTH_ONLY 3
+        }
+
         //
         //         /*
         //         enum GPUTextureFormat {
@@ -906,7 +951,12 @@ namespace WebGpu
         //             "astc-12x12-unorm-srgb"
         //         };
         //         */
-        //         typedef int WGPU_TEXTURE_FORMAT;
+        public enum WGPU_TEXTURE_FORMAT
+        {
+            WGPU_TEXTURE_FORMAT_RGBA8UNORM      = 18,
+            WGPU_TEXTURE_FORMAT_DEPTH24PLUS = 39,
+            WGPU_TEXTURE_FORMAT_BGRA8UNORM = 23,
+        }
         // #define WGPU_TEXTURE_FORMAT_INVALID 0
         //         // 8-bit formats
         // #define WGPU_TEXTURE_FORMAT_R8UNORM 1
@@ -935,7 +985,6 @@ namespace WebGpu
         // #define WGPU_TEXTURE_FORMAT_RGBA8SNORM      20
         // #define WGPU_TEXTURE_FORMAT_RGBA8UINT       21
         // #define WGPU_TEXTURE_FORMAT_RGBA8SINT       22
-        // #define WGPU_TEXTURE_FORMAT_BGRA8UNORM      23
         // #define WGPU_TEXTURE_FORMAT_BGRA8UNORM_SRGB 24
         //         // Packed 32-bit formats
         // #define WGPU_TEXTURE_FORMAT_RGB9E5UFLOAT  25
@@ -958,7 +1007,6 @@ namespace WebGpu
         //         // Depth/stencil formats
         // #define WGPU_TEXTURE_FORMAT_STENCIL8              37
         // #define WGPU_TEXTURE_FORMAT_DEPTH16UNORM          38
-        // #define WGPU_TEXTURE_FORMAT_DEPTH24PLUS           39
         // #define WGPU_TEXTURE_FORMAT_DEPTH24PLUS_STENCIL8  40
         // #define WGPU_TEXTURE_FORMAT_DEPTH32FLOAT          41
         // #define WGPU_TEXTURE_FORMAT_DEPTH32FLOAT_STENCIL8 42
@@ -1141,10 +1189,12 @@ namespace WebGpu
         //             "always"
         //         };
         //         */
-        //         typedef int WGPU_COMPARE_FUNCTION;
+        public enum WGPU_COMPARE_FUNCTION
+        {
+            WGPU_COMPARE_FUNCTION_LESS = 2,
+        }
         // #define WGPU_COMPARE_FUNCTION_INVALID 0
         // #define WGPU_COMPARE_FUNCTION_NEVER 1
-        // #define WGPU_COMPARE_FUNCTION_LESS 2
         // #define WGPU_COMPARE_FUNCTION_EQUAL 3
         // #define WGPU_COMPARE_FUNCTION_LESS_EQUAL 4
         // #define WGPU_COMPARE_FUNCTION_GREATER 5
@@ -1178,7 +1228,11 @@ namespace WebGpu
         //             const GPUFlagsConstant COMPUTE  = 0x4;
         //         };
         //         */
-        //         typedef int WGPU_SHADER_STAGE_FLAGS;
+        public enum WGPU_SHADER_STAGE_FLAGS
+        {
+
+        }
+
         // #define WGPU_SHADER_STAGE_VERTEX   0x1
         // #define WGPU_SHADER_STAGE_FRAGMENT 0x2
         // #define WGPU_SHADER_STAGE_COMPUTE  0x4
@@ -1195,13 +1249,17 @@ namespace WebGpu
         //             GPUExternalTextureBindingLayout externalTexture;
         //         };
         //         */
-        //         typedef int WGPU_BIND_GROUP_LAYOUT_TYPE;
-        // #define WGPU_BIND_GROUP_LAYOUT_TYPE_INVALID 0
-        // #define WGPU_BIND_GROUP_LAYOUT_TYPE_BUFFER 1
-        // #define WGPU_BIND_GROUP_LAYOUT_TYPE_SAMPLER 2
-        // #define WGPU_BIND_GROUP_LAYOUT_TYPE_TEXTURE 3
-        // #define WGPU_BIND_GROUP_LAYOUT_TYPE_STORAGE_TEXTURE 4
-        // #define WGPU_BIND_GROUP_LAYOUT_TYPE_EXTERNAL_TEXTURE 5
+        public enum WGPU_BIND_GROUP_LAYOUT_TYPE
+        {
+            // #define WGPU_BIND_GROUP_LAYOUT_TYPE_INVALID 0
+            WGPU_BIND_GROUP_LAYOUT_TYPE_BUFFER  = 1,
+            // #define WGPU_BIND_GROUP_LAYOUT_TYPE_SAMPLER 2
+            // #define WGPU_BIND_GROUP_LAYOUT_TYPE_TEXTURE 3
+            // #define WGPU_BIND_GROUP_LAYOUT_TYPE_STORAGE_TEXTURE 4
+            // #define WGPU_BIND_GROUP_LAYOUT_TYPE_EXTERNAL_TEXTURE 5
+
+        }
+
         //
         //         // typedef struct WGpuBindGroupLayoutEntry at the end of this file.
         //
@@ -1212,7 +1270,10 @@ namespace WebGpu
         //             "read-only-storage",
         //         };
         //         */
-        //         typedef int WGPU_BUFFER_BINDING_TYPE;
+        public enum WGPU_BUFFER_BINDING_TYPE
+        {
+
+        }
         // #define WGPU_BUFFER_BINDING_TYPE_INVALID 0
         // #define WGPU_BUFFER_BINDING_TYPE_UNIFORM 1
         // #define WGPU_BUFFER_BINDING_TYPE_STORAGE 2
@@ -1225,13 +1286,13 @@ namespace WebGpu
         //             GPUSize64 minBindingSize = 0;
         //         };
         //         */
-        //         typedef struct WGpuBufferBindingLayout
-        //         {
-        //             WGPU_BUFFER_BINDING_TYPE type;
-        //             /* EM_BOOL */ int hasDynamicOffset;
-        //             uint64_t minBindingSize;
-        //         }
-        //         WGpuBufferBindingLayout;
+        [StructLayout(LayoutKind.Sequential)]
+        public struct WGpuBufferBindingLayout
+        {
+            public WGPU_BUFFER_BINDING_TYPE type;
+            public /* EM_BOOL */ int hasDynamicOffset;
+            public ulong minBindingSize;
+        }
         // extern const WGpuBufferBindingLayout WGPU_BUFFER_BINDING_LAYOUT_DEFAULT_INITIALIZER;
         //
         //         /*
@@ -1241,7 +1302,11 @@ namespace WebGpu
         //             "comparison",
         //         };
         //         */
-        //         typedef int WGPU_SAMPLER_BINDING_TYPE;
+        public enum WGPU_SAMPLER_BINDING_TYPE
+        {
+
+        }
+
         // #define WGPU_SAMPLER_BINDING_TYPE_INVALID 0
         // #define WGPU_SAMPLER_BINDING_TYPE_FILTERING 1
         // #define WGPU_SAMPLER_BINDING_TYPE_NON_FILTERING 2
@@ -1252,11 +1317,12 @@ namespace WebGpu
         //             GPUSamplerBindingType type = "filtering";
         //         };
         //         */
-        //         typedef struct WGpuSamplerBindingLayout
-        //         {
-        //             WGPU_SAMPLER_BINDING_TYPE type;
-        //         }
-        //         WGpuSamplerBindingLayout;
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct WGpuSamplerBindingLayout
+        {
+            WGPU_SAMPLER_BINDING_TYPE type;
+        }
         // extern const WGpuSamplerBindingLayout WGPU_SAMPLER_BINDING_LAYOUT_DEFAULT_INITIALIZER;
         //
         //         /*
@@ -1268,7 +1334,9 @@ namespace WebGpu
         //           "uint",
         //         };
         //         */
-        //         typedef int WGPU_TEXTURE_SAMPLE_TYPE;
+        public enum WGPU_TEXTURE_SAMPLE_TYPE
+        { }
+
         // #define WGPU_TEXTURE_SAMPLE_TYPE_INVALID 0
         // #define WGPU_TEXTURE_SAMPLE_TYPE_FLOAT 1
         // #define WGPU_TEXTURE_SAMPLE_TYPE_UNFILTERABLE_FLOAT 2
@@ -1283,12 +1351,12 @@ namespace WebGpu
         //             boolean multisampled = false;
         //         };
         //         */
-        //         typedef struct WGpuTextureBindingLayout
-        //         {
-        //             WGPU_TEXTURE_SAMPLE_TYPE sampleType;
-        //             WGPU_TEXTURE_VIEW_DIMENSION viewDimension;
-        //         }
-        //         WGpuTextureBindingLayout;
+        [StructLayout(LayoutKind.Sequential)]
+        public struct WGpuTextureBindingLayout
+        {
+            WGPU_TEXTURE_SAMPLE_TYPE sampleType;
+            WGPU_TEXTURE_VIEW_DIMENSION viewDimension;
+        }
         // extern const WGpuTextureBindingLayout WGPU_TEXTURE_BINDING_LAYOUT_DEFAULT_INITIALIZER;
         //
         //         /*
@@ -1296,9 +1364,11 @@ namespace WebGpu
         //             "write-only",
         //         };
         //         */
-        //         typedef int WGPU_STORAGE_TEXTURE_ACCESS;
-        // #define WGPU_STORAGE_TEXTURE_ACCESS_INVALID 0
-        // #define WGPU_STORAGE_TEXTURE_ACCESS_WRITE_ONLY 1
+        public enum WGPU_STORAGE_TEXTURE_ACCESS
+        {
+            // #define WGPU_STORAGE_TEXTURE_ACCESS_INVALID 0
+            // #define WGPU_STORAGE_TEXTURE_ACCESS_WRITE_ONLY 1
+        }
         //
         //         /*
         //         dictionary GPUStorageTextureBindingLayout {
@@ -1307,12 +1377,13 @@ namespace WebGpu
         //             GPUTextureViewDimension viewDimension = "2d";
         //         };
         //         */
-        //         typedef struct WGpuStorageTextureBindingLayout
-        //         {
-        //             WGPU_STORAGE_TEXTURE_ACCESS access;
-        //             WGPU_TEXTURE_FORMAT format;
-        //             WGPU_TEXTURE_VIEW_DIMENSION viewDimension;
-        //         }
+        [StructLayout(LayoutKind.Sequential)]
+        public struct WGpuStorageTextureBindingLayout
+        {
+            WGPU_STORAGE_TEXTURE_ACCESS access;
+            WGPU_TEXTURE_FORMAT format;
+            WGPU_TEXTURE_VIEW_DIMENSION viewDimension;
+        }
         //         WGpuStorageTextureBindingLayout;
         // extern const WGpuStorageTextureBindingLayout WGPU_STORAGE_TEXTURE_BINDING_LAYOUT_DEFAULT_INITIALIZER;
         //
@@ -1320,10 +1391,11 @@ namespace WebGpu
         //         dictionary GPUExternalTextureBindingLayout {
         //         };
         //         */
-        //         typedef struct WGpuExternalTextureBindingLayout
-        //         {
-        //             int _dummyPadding; // Appease mixed C and C++ compilation to agree on non-zero struct size.
-        //         }
+        [StructLayout(LayoutKind.Sequential)]
+        public struct WGpuExternalTextureBindingLayout
+        {
+            int _dummyPadding; // Appease mixed C and C++ compilation to agree on non-zero struct size.
+        }
         //         WGpuExternalTextureBindingLayout;
         //
         // /*
@@ -1352,17 +1424,17 @@ namespace WebGpu
         //             required GPUBindingResource resource;
         //         };
         //         */
-        //         typedef struct WGpuBindGroupEntry
-        //         {
-        //             int binding;
-        //             WGpuObjectBase resource;
-        //             // If 'resource' points to a WGpuBuffer, bufferBindOffset and bufferBindSize specify
-        //             // the offset and length of the buffer to bind. If 'resource' does not point to a WGpuBuffer,
-        //             // offset and size are ignored.
-        //             uint64_t bufferBindOffset;
-        //             uint64_t bufferBindSize; // If set to 0 (default), the whole buffer is bound.
-        //         }
-        //         WGpuBindGroupEntry;
+        [StructLayout(LayoutKind.Sequential)]
+        public struct WGpuBindGroupEntry
+        {
+            public int binding;
+            public WGpuObjectBase resource;
+            // If 'resource' points to a WGpuBuffer, bufferBindOffset and bufferBindSize specify
+            // the offset and length of the buffer to bind. If 'resource' does not point to a WGpuBuffer,
+            // offset and size are ignored.
+            public ulong bufferBindOffset;
+            public ulong bufferBindSize; // If set to 0 (default), the whole buffer is bound.
+        }
         // extern const WGpuBindGroupEntry WGPU_BIND_GROUP_ENTRY_DEFAULT_INITIALIZER;
         //
         //         /*
@@ -1413,12 +1485,12 @@ namespace WebGpu
         //             (GPUPipelineLayout or GPUAutoLayoutMode) layout;
         //         };
         //         */
-        [StructLayout(LayoutKind.Sequential, CharSet= CharSet.Ansi)]
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
         public struct WGpuShaderModuleCompilationHint
         {
             public string entryPointName;
             // WGPU_AUTO_LAYOUT_MODE
-            WGpuPipelineLayout layout;  // Assign the special value WGPU_AUTO_LAYOUT_MODE_AUTO (default) to hint an automatically created pipeline object.
+            public WGpuPipelineLayout layout;  // Assign the special value WGPU_AUTO_LAYOUT_MODE_AUTO (default) to hint an automatically created pipeline object.
         }
         // extern const WGpuShaderModuleCompilationHint WGPU_SHADER_MODULE_COMPILATION_HINT_DEFAULT_INITIALIZER;
         //
@@ -1429,13 +1501,13 @@ namespace WebGpu
         //             record<USVString, GPUShaderModuleCompilationHint> hints;
         //         };
         //         */
-        [StructLayout(LayoutKind.Sequential, CharSet= CharSet.Ansi)]
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
         public struct WGpuShaderModuleDescriptor
         {
             public string code;
             // TODO: add sourceMap support
-            int numHints;
-            WGpuShaderModuleCompilationHint* hints;
+            public int numHints;
+            public WGpuShaderModuleCompilationHint* hints;
         }
         //
         // /*
@@ -1518,7 +1590,7 @@ namespace WebGpu
         // */
         // typedef int WGPU_AUTO_LAYOUT_MODE;
         // #define WGPU_AUTO_LAYOUT_MODE_NO_HINT 0 // In shader compilation, specifies that no hint is to be passed. Invalid to be used in pipeline creation.
-        // #define WGPU_AUTO_LAYOUT_MODE_AUTO    1 // In shader compilation, specifies that the hint { layout: 'auto' } is to be passed. In pipeline creation, uses automatic layout creation.
+        public const int WGPU_AUTO_LAYOUT_MODE_AUTO = 1; // In shader compilation, specifies that the hint { layout: 'auto' } is to be passed. In pipeline creation, uses automatic layout creation.
         //
         //         /*
         //         dictionary GPUPipelineDescriptorBase : GPUObjectDescriptorBase {
@@ -1532,10 +1604,11 @@ namespace WebGpu
         //              [NewObject] GPUBindGroupLayout getBindGroupLayout(unsigned long index);
         //         };
         //         */
-        //         // Returns the bind group layout at the given index of the pipeline. Important: this function allocates a
-        //         // new WebGPU object, so in order not to leak WebGPU handles, call wgpu_object_destroy() on the returned value
-        //         // when done with it.
-        //         WGpuBindGroupLayout wgpu_pipeline_get_bind_group_layout(WGpuObjectBase pipelineBase, int index);
+        // Returns the bind group layout at the given index of the pipeline. Important: this function allocates a
+        // new WebGPU object, so in order not to leak WebGPU handles, call wgpu_object_destroy() on the returned value
+        // when done with it.
+        [DllImport("*")]
+        public static extern WGpuBindGroupLayout wgpu_pipeline_get_bind_group_layout(WGpuObjectBase pipelineBase, int index);
         // #define wgpu_render_pipeline_get_bind_group_layout wgpu_pipeline_get_bind_group_layout
         // #define wgpu_compute_pipeline_get_bind_group_layout wgpu_pipeline_get_bind_group_layout
         //
@@ -1606,7 +1679,11 @@ namespace WebGpu
         //             "triangle-strip"
         //         };
         //         */
-        //         typedef int WGPU_PRIMITIVE_TOPOLOGY;
+        public enum WGPU_PRIMITIVE_TOPOLOGY
+        {
+            WGPU_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST = 4,
+        }
+
         // #define WGPU_PRIMITIVE_TOPOLOGY_INVALID 0
         // #define WGPU_PRIMITIVE_TOPOLOGY_POINT_LIST 1
         // #define WGPU_PRIMITIVE_TOPOLOGY_LINE_LIST 2
@@ -1628,12 +1705,16 @@ namespace WebGpu
         [StructLayout(LayoutKind.Sequential)]
         public struct WGpuPrimitiveState
         {
-            /* WGPU_PRIMITIVE_TOPOLOGY */ int topology; // Defaults to WGPU_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST ('triangle-list')
-            /* WGPU_INDEX_FORMAT */ int stripIndexFormat; // Defaults to undefined, must be explicitly specified if WGPU_PRIMITIVE_TOPOLOGY_LINE_STRIP ('line-strip') or WGPU_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP ('triangle-strip') is used.
-            /* WGPU_FRONT_FACE */ int frontFace; // Defaults to WGPU_FRONT_FACE_CCW ('ccw')
-            /* WGPU_CULL_MODE */ int cullMode; // Defaults to WGPU_CULL_MODE_NONE ('none')
-        
-            /* EM_BOOL */ int unclippedDepth; // defaults to EM_FALSE.
+            public WGPU_PRIMITIVE_TOPOLOGY topology; // Defaults to WGPU_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST ('triangle-list')
+            /* WGPU_INDEX_FORMAT */
+            public int stripIndexFormat; // Defaults to undefined, must be explicitly specified if WGPU_PRIMITIVE_TOPOLOGY_LINE_STRIP ('line-strip') or WGPU_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP ('triangle-strip') is used.
+            /* WGPU_FRONT_FACE */
+            public int frontFace; // Defaults to WGPU_FRONT_FACE_CCW ('ccw')
+            /* WGPU_CULL_MODE */
+            public int cullMode; // Defaults to WGPU_CULL_MODE_NONE ('none')
+
+            /* EM_BOOL */
+            public int unclippedDepth; // defaults to EM_FALSE.
         }
         //         WGpuPrimitiveState;
         //
@@ -1673,7 +1754,8 @@ namespace WebGpu
         {
             int count;
             int mask;
-            /* EM_BOOL */ int alphaToCoverageEnabled;
+            /* EM_BOOL */
+            int alphaToCoverageEnabled;
         }
         //
         // /*
@@ -1683,14 +1765,14 @@ namespace WebGpu
         // */
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
         public struct WGpuFragmentState
-                {
-                    public WGpuShaderModule module;
-                    public string entryPoint;
-                    public int numTargets;
-                    public WGpuColorTargetState* targets;
-                    int numConstants;
-                    WGpuPipelineConstant* constants;
-                }
+        {
+            public WGpuShaderModule module;
+            public string entryPoint;
+            public int numTargets;
+            public WGpuColorTargetState* targets;
+            int numConstants;
+            WGpuPipelineConstant* constants;
+        }
         //
         // /*
         // dictionary GPUColorTargetState {
@@ -1738,10 +1820,12 @@ namespace WebGpu
         [StructLayout(LayoutKind.Sequential)]
         public struct WGpuBlendComponent
         {
-            /* WGPU_BLEND_OPERATION */ int operation;
-            /* WGPU_BLEND_FACTOR */ int srcFactor;
+            /* WGPU_BLEND_OPERATION */
+            public WGPU_BLEND_OPERATION operation;
             /* WGPU_BLEND_FACTOR */
-            int dstFactor;
+            public WGPU_BLEND_FACTOR srcFactor;
+            /* WGPU_BLEND_FACTOR */
+            public WGPU_BLEND_FACTOR dstFactor;
         }
         //
         // /*
@@ -1761,13 +1845,18 @@ namespace WebGpu
         //     "one-minus-constant"
         // };
         // */
-        // typedef int WGPU_BLEND_FACTOR;
+        public enum WGPU_BLEND_FACTOR
+        {
+            WGPU_BLEND_FACTOR_ZERO = 1,
+            WGPU_BLEND_FACTOR_ONE = 2,
+            WGPU_BLEND_FACTOR_SRC_ALPHA = 5,
+
+        }
         // #define WGPU_BLEND_FACTOR_INVALID 0
         // #define WGPU_BLEND_FACTOR_ZERO 1
         // #define WGPU_BLEND_FACTOR_ONE 2
         // #define WGPU_BLEND_FACTOR_SRC 3
         // #define WGPU_BLEND_FACTOR_ONE_MINUS_SRC 4
-        // #define WGPU_BLEND_FACTOR_SRC_ALPHA 5
         // #define WGPU_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA 6
         // #define WGPU_BLEND_FACTOR_DST 7
         // #define WGPU_BLEND_FACTOR_ONE_MINUS_DST 8
@@ -1786,7 +1875,10 @@ namespace WebGpu
         //             "max"
         //         };
         //         */
-        //         typedef int WGPU_BLEND_OPERATION;
+        public enum WGPU_BLEND_OPERATION
+        {
+            WGPU_BLEND_OPERATION_ADD  = 1,
+        }
         // #define WGPU_BLEND_OPERATION_INVALID 0
         // #define WGPU_BLEND_OPERATION_DISABLED 0 // Alias to 'WGPU_BLEND_OPERATION_INVALID'. Used to denote alpha blending being disabled in a more readable way.
         // #define WGPU_BLEND_OPERATION_ADD 1
@@ -1826,8 +1918,10 @@ namespace WebGpu
         [StructLayout(LayoutKind.Sequential)]
         public struct WGpuStencilFaceState
         {
-            /* WGPU_COMPARE_FUNCTION */ int compare;
-            /* WGPU_STENCIL_OPERATION */ int failOp;
+            /* WGPU_COMPARE_FUNCTION */
+            int compare;
+            /* WGPU_STENCIL_OPERATION */
+            int failOp;
             /* WGPU_STENCIL_OPERATION */
             int depthFailOp;
             /* WGPU_STENCIL_OPERATION */
@@ -1904,7 +1998,13 @@ namespace WebGpu
         //         */
         //         // The numbering on these types continues at the end of WGPU_TEXTURE_FORMAT
         //         // for optimization reasons.
-        //         typedef int WGPU_VERTEX_FORMAT;
+        public enum WGPU_VERTEX_FORMAT
+        {
+            // add them all?  Do me a favour.
+            WGPU_VERTEX_FORMAT_FLOAT32X2 = 114,
+            WGPU_VERTEX_FORMAT_FLOAT32X3 = 115,
+            WGPU_VERTEX_FORMAT_FLOAT32X4 = 116,
+        }
         // #define WGPU_VERTEX_FORMAT_INVALID   0
         // #define WGPU_VERTEX_FORMAT_UINT8X2   95
         // #define WGPU_VERTEX_FORMAT_UINT8X4   96
@@ -1925,9 +2025,6 @@ namespace WebGpu
         // #define WGPU_VERTEX_FORMAT_FLOAT16X2 111
         // #define WGPU_VERTEX_FORMAT_FLOAT16X4 112
         // #define WGPU_VERTEX_FORMAT_FLOAT32   113
-        // #define WGPU_VERTEX_FORMAT_FLOAT32X2 114
-        // #define WGPU_VERTEX_FORMAT_FLOAT32X3 115
-        // #define WGPU_VERTEX_FORMAT_FLOAT32X4 116
         // #define WGPU_VERTEX_FORMAT_UINT32    117
         // #define WGPU_VERTEX_FORMAT_UINT32X2  118
         // #define WGPU_VERTEX_FORMAT_UINT32X3  119
@@ -1943,23 +2040,26 @@ namespace WebGpu
         //             "instance"
         //         };
         //         */
-        //         typedef int WGPU_VERTEX_STEP_MODE;
-        // #define WGPU_VERTEX_STEP_MODE_INVALID 0
-        // #define WGPU_VERTEX_STEP_MODE_VERTEX 1
-        // #define WGPU_VERTEX_STEP_MODE_INSTANCE 2
+        public enum WGPU_VERTEX_STEP_MODE
+        {
+            WGPU_VERTEX_STEP_MODE_INVALID = 0,
+            WGPU_VERTEX_STEP_MODE_VERTEX = 1,
+            WGPU_VERTEX_STEP_MODE_INSTANCE = 2
+        }
+
         //
         //         /*
         //         dictionary GPUVertexState: GPUProgrammableStage {
         //             sequence<GPUVertexBufferLayout?> buffers = [];
         //         };
         //         */
-        [StructLayout(LayoutKind.Sequential, CharSet= CharSet.Ansi)]
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
         public struct WGpuVertexState
         {
             public WGpuShaderModule module;
             public string entryPoint;
             int numBuffers;
-            WGpuVertexBufferLayout* buffers;
+            public WGpuVertexBufferLayout* buffers;
             int numConstants;
             WGpuPipelineConstant* constants;
         }
@@ -1974,13 +2074,14 @@ namespace WebGpu
         [StructLayout(LayoutKind.Sequential)]
         public struct WGpuVertexBufferLayout
         {
-                    int numAttributes;
-                    WGpuVertexAttribute* attributes;
+            public int numAttributes;
+            public WGpuVertexAttribute* attributes;
             /* uint64_t */
-            ulong arrayStride;
-                    /* WGPU_VERTEX_STEP_MODE */ int stepMode;
-                    int _unused64BitPadding;
-                }
+            public ulong arrayStride;
+            /* WGPU_VERTEX_STEP_MODE */
+            public WGPU_VERTEX_STEP_MODE stepMode;
+            public int _unused64BitPadding;
+        }
         //
         // /*
         // dictionary GPUVertexAttribute {
@@ -1992,11 +2093,13 @@ namespace WebGpu
         // */
         [StructLayout(LayoutKind.Sequential)]
         public struct WGpuVertexAttribute
-                {
-                    /* uint64_t */ ulong offset;
-                    int shaderLocation;
-                    /* WGPU_VERTEX_FORMAT */ int format;
-                }
+        {
+            /* uint64_t */
+            public ulong offset;
+
+            public int shaderLocation;
+            public WGPU_VERTEX_FORMAT format;
+        }
         //
         // /*
         // [Exposed=(Window, DedicatedWorker), SecureContext]
@@ -2084,10 +2187,11 @@ namespace WebGpu
         // /* EM_BOOL */ int wgpu_is_command_encoder(WGpuObjectBase object);
         //
         [DllImport("*")]
-        public static extern WGpuRenderPassEncoder wgpu_command_encoder_begin_render_pass(WGpuCommandEncoder commandEncoder, WGpuRenderPassDescriptor* renderPassDesc);
+        public static extern WGpuRenderPassEncoder wgpu_command_encoder_begin_render_pass(WGpuCommandEncoder commandEncoder, ref WGpuRenderPassDescriptor renderPassDesc);
         // // Like above, but tiny code size path for the case when there is exactly one color and zero depth-stencil targets and no occlusion query set specified for the render pass.
         // WGpuRenderPassEncoder wgpu_command_encoder_begin_render_pass_1color_0depth(WGpuCommandEncoder commandEncoder, const WGpuRenderPassDescriptor* renderPassDesc NOTNULL);
-        // WGpuComputePassEncoder wgpu_command_encoder_begin_compute_pass(WGpuCommandEncoder commandEncoder, const WGpuComputePassDescriptor* computePassDesc _WGPU_DEFAULT_VALUE(0));
+        [DllImport("*")]
+        public static extern WGpuComputePassEncoder wgpu_command_encoder_begin_compute_pass(WGpuCommandEncoder commandEncoder, WGpuComputePassDescriptor* computePassDesc /*_WGPU_DEFAULT_VALUE(0)*/);
         // void wgpu_command_encoder_copy_buffer_to_buffer(WGpuCommandEncoder commandEncoder, WGpuBuffer source, /*double_int53_tL */ double sourceOffset, WGpuBuffer destination, /*double_int53_tL */ double destinationOffset, /*double_int53_tL */ double size);
         //         void wgpu_command_encoder_copy_buffer_to_texture(WGpuCommandEncoder commandEncoder, const WGpuImageCopyBuffer* source NOTNULL, const WGpuImageCopyTexture* destination NOTNULL, int copyWidth, int copyHeight _WGPU_DEFAULT_VALUE(1), int copyDepthOrArrayLayers _WGPU_DEFAULT_VALUE(1));
         // void wgpu_command_encoder_copy_texture_to_buffer(WGpuCommandEncoder commandEncoder, const WGpuImageCopyTexture* source NOTNULL, const WGpuImageCopyBuffer* destination NOTNULL, int copyWidth, int copyHeight _WGPU_DEFAULT_VALUE(1), int copyDepthOrArrayLayers _WGPU_DEFAULT_VALUE(1));
@@ -2186,7 +2290,8 @@ namespace WebGpu
         //         typedef WGpuObjectBase WGpuBindingCommandsMixin;
         // // Returns true if the given handle references a valid GPUBindingCommandsMixin. (one of: GPUComputePassEncoder, GPURenderPassEncoder, or GPURenderBundleEncoder)
         // /* EM_BOOL */ int wgpu_is_binding_commands_mixin(WGpuObjectBase object);
-        //         void wgpu_encoder_set_bind_group(WGpuBindingCommandsMixin encoder, int index, WGpuBindGroup bindGroup, const int* dynamicOffsets _WGPU_DEFAULT_VALUE(0), int numDynamicOffsets _WGPU_DEFAULT_VALUE(0));
+        [DllImport("*")]
+        public static extern void wgpu_encoder_set_bind_group(WGpuBindingCommandsMixin encoder, int index, WGpuBindGroup bindGroup, int* dynamicOffsets /*_WGPU_DEFAULT_VALUE(0) */, int numDynamicOffsets /*_WGPU_DEFAULT_VALUE(0)*/);
         //
         // Some of the functions in GPURenderBundleEncoder, GPURenderPassEncoder and GPUComputePassEncoder are identical in implementation,
         // so group them under a common base class.
@@ -2223,7 +2328,8 @@ namespace WebGpu
         // /* EM_BOOL */ int wgpu_is_compute_pass_encoder(WGpuObjectBase object);
         //
         // #define wgpu_compute_pass_encoder_set_pipeline wgpu_encoder_set_pipeline
-        //         void wgpu_compute_pass_encoder_dispatch_workgroups(WGpuComputePassEncoder encoder, int workgroupCountX, int workgroupCountY _WGPU_DEFAULT_VALUE(1), int workgroupCountZ _WGPU_DEFAULT_VALUE(1));
+        [DllImport("*")]
+        public static extern void wgpu_compute_pass_encoder_dispatch_workgroups(WGpuComputePassEncoder encoder, uint workgroupCountX, uint workgroupCountY = 1 /*_WGPU_DEFAULT_VALUE(1) */, uint workgroupCountZ = 1/*_WGPU_DEFAULT_VALUE(1)*/);
         // void wgpu_compute_pass_encoder_dispatch_workgroups_indirect(WGpuComputePassEncoder encoder, WGpuBuffer indirectBuffer, /*double_int53_tL */ double indirectOffset);
         // #define wgpu_compute_pass_encoder_end wgpu_encoder_end
         //
@@ -2241,9 +2347,12 @@ namespace WebGpu
         //             "end",
         //         };
         //         */
-        //         typedef int WGPU_COMPUTE_PASS_TIMESTAMP_LOCATION;
-        // #define WGPU_COMPUTE_PASS_TIMESTAMP_LOCATION_BEGINNING 0
-        // #define WGPU_COMPUTE_PASS_TIMESTAMP_LOCATION_END       1
+        public enum WGPU_COMPUTE_PASS_TIMESTAMP_LOCATION
+        {
+            // #define WGPU_COMPUTE_PASS_TIMESTAMP_LOCATION_BEGINNING 0
+            // #define WGPU_COMPUTE_PASS_TIMESTAMP_LOCATION_END       1
+        }
+
         //
         //         /*
         //         dictionary GPUComputePassTimestampWrite {
@@ -2252,13 +2361,13 @@ namespace WebGpu
         //             required GPUComputePassTimestampLocation location;
         //         };
         //         */
-        //         typedef struct WGpuComputePassTimestampWrite
-        //         {
-        //             WGpuQuerySet querySet;
-        //             int queryIndex;
-        //             WGPU_COMPUTE_PASS_TIMESTAMP_LOCATION location;
-        //         }
-        //         WGpuComputePassTimestampWrite;
+        [StructLayout(LayoutKind.Sequential)]
+        public struct WGpuComputePassTimestampWrite
+        {
+            public WGpuQuerySet querySet;
+            public int queryIndex;
+            public WGPU_COMPUTE_PASS_TIMESTAMP_LOCATION location;
+        }
         //
         // /*
         // typedef sequence<GPUComputePassTimestampWrite> GPUComputePassTimestampWrites;
@@ -2267,12 +2376,13 @@ namespace WebGpu
         //   GPUComputePassTimestampWrites timestampWrites = [];
         // };
         // */
-        // typedef struct WGpuComputePassDescriptor
-        //         {
-        //             int numTimestampWrites;
-        //             WGpuComputePassTimestampWrite* timestampWrites;
-        //         }
-        //         WGpuComputePassDescriptor;
+        [StructLayout(LayoutKind.Sequential)]
+        public struct WGpuComputePassDescriptor
+        {
+            public int numTimestampWrites;
+            public WGpuComputePassTimestampWrite* timestampWrites;
+        }
+
         //
         // /*
         // interface mixin GPURenderCommandsMixin {
@@ -2299,10 +2409,15 @@ namespace WebGpu
         //
         // #define wgpu_render_commands_mixin_set_pipeline wgpu_encoder_set_pipeline
         //         void wgpu_render_commands_mixin_set_index_buffer(WGpuRenderCommandsMixin renderCommandsMixin, WGpuBuffer buffer, WGPU_INDEX_FORMAT indexFormat, /*double_int53_tL */ double offset _WGPU_DEFAULT_VALUE(0), /*double_int53_tL */ double size _WGPU_DEFAULT_VALUE(-1));
-        // void wgpu_render_commands_mixin_set_vertex_buffer(WGpuRenderCommandsMixin renderCommandsMixin, int32_t slot, WGpuBuffer buffer, /*double_int53_tL */ double offset _WGPU_DEFAULT_VALUE(0), /*double_int53_tL */ double size _WGPU_DEFAULT_VALUE(-1));
+        [DllImport("*")]
+        public static extern void wgpu_render_commands_mixin_set_vertex_buffer(WGpuRenderCommandsMixin renderCommandsMixin, int slot, WGpuBuffer buffer, /*double_int53_tL */ long offset  = 0/*_WGPU_DEFAULT_VALUE(0)*/, /*double_int53_tL */ long size = -1 /*_WGPU_DEFAULT_VALUE(-1)*/);
+
+        [DllImport("*", EntryPoint = "wgpu_render_commands_mixin_set_vertex_buffer")]
+        public static extern void wgpu_render_pass_encoder_set_vertex_buffer(WGpuRenderCommandsMixin renderCommandsMixin, int slot, WGpuBuffer buffer, /*double_int53_tL */ long offset  = 0/*_WGPU_DEFAULT_VALUE(0)*/, /*double_int53_tL */ long size = -1 /*_WGPU_DEFAULT_VALUE(-1)*/);
+
         //
         [DllImport("*")]
-        public static extern void wgpu_render_commands_mixin_draw(WGpuRenderCommandsMixin renderCommandsMixin, int vertexCount, int instanceCount = 1/* _WGPU_DEFAULT_VALUE(1)*/, int firstVertex  = 0/*_WGPU_DEFAULT_VALUE(0) */, int firstInstance = 0 /*_WGPU_DEFAULT_VALUE(0) */);
+        public static extern void wgpu_render_commands_mixin_draw(WGpuRenderCommandsMixin renderCommandsMixin, int vertexCount, int instanceCount = 1/* _WGPU_DEFAULT_VALUE(1)*/, int firstVertex = 0/*_WGPU_DEFAULT_VALUE(0) */, int firstInstance = 0 /*_WGPU_DEFAULT_VALUE(0) */);
 
         [DllImport("*", EntryPoint = "wgpu_render_commands_mixin_draw")]
         public static extern void wgpu_render_pass_encoder_draw(WGpuRenderCommandsMixin renderCommandsMixin, int vertexCount, int instanceCount = 1/* _WGPU_DEFAULT_VALUE(1)*/, int firstVertex = 0/*_WGPU_DEFAULT_VALUE(0) */, int firstInstance = 0 /*_WGPU_DEFAULT_VALUE(0) */);
@@ -2397,18 +2512,19 @@ namespace WebGpu
         [StructLayout(LayoutKind.Sequential)]
         public struct WGpuRenderPassDepthStencilAttachment
         {
-            WGpuTextureView view;
-        
-            /* WGPU_LOAD_OP */ int depthLoadOp; // Either WGPU_LOAD_OP_LOAD (== default, 0) or WGPU_LOAD_OP_CLEAR
-            float depthClearValue;
-        
-            /* WGPU_STORE_OP */ int depthStoreOp;
-            bool depthReadOnly;
-        
-            /* WGPU_LOAD_OP */ int stencilLoadOp;  // Either WGPU_LOAD_OP_LOAD (== default, 0) or WGPU_LOAD_OP_CLEAR
-            int stencilClearValue;
-            /* WGPU_STORE_OP */ int stencilStoreOp;
-            /* EM_BOOL */ int stencilReadOnly;
+            public WGpuTextureView view;
+
+            public WGPU_LOAD_OP depthLoadOp; // Either WGPU_LOAD_OP_LOAD (== default, 0) or WGPU_LOAD_OP_CLEAR
+            public float depthClearValue;
+
+            public WGPU_STORE_OP depthStoreOp;
+            public bool depthReadOnly;
+
+            public WGPU_LOAD_OP stencilLoadOp;  // Either WGPU_LOAD_OP_LOAD (== default, 0) or WGPU_LOAD_OP_CLEAR
+            public int stencilClearValue;
+            public WGPU_STORE_OP stencilStoreOp;
+            /* EM_BOOL */
+            public int stencilReadOnly;
         }
         //
         // /*
@@ -2417,9 +2533,11 @@ namespace WebGpu
         //     "clear",
         // };
         // */
-        // typedef int /* WGPU_LOAD_OP */ int;
-        // #define WGPU_LOAD_OP_LOAD 0
-        // #define WGPU_LOAD_OP_CLEAR 1
+        public enum WGPU_LOAD_OP
+        {
+            WGPU_LOAD_OP_LOAD = 0,
+            WGPU_LOAD_OP_CLEAR = 1,
+        }
         //
         //         /*
         //         enum GPUStoreOp {
@@ -2427,9 +2545,11 @@ namespace WebGpu
         //             "discard"
         //         };
         //         */
-        //         typedef int /* WGPU_STORE_OP */ int;
-        // #define WGPU_STORE_OP_STORE 0
-        // #define WGPU_STORE_OP_DISCARD 1
+        public enum WGPU_STORE_OP
+        {
+            WGPU_STORE_OP_STORE = 0,
+            WGPU_STORE_OP_DISCARD = 1
+        }
         //
         //         /*
         //         dictionary GPURenderPassLayout : GPUObjectDescriptorBase {
@@ -2539,7 +2659,8 @@ namespace WebGpu
         // /* EM_BOOL */ int wgpu_is_queue(WGpuObjectBase object);
         //
         //         // Submits one command buffer to the given queue for rendering. The command buffer is held alive for later resubmission to another queue.
-        //         void wgpu_queue_submit_one(WGpuQueue queue, WGpuCommandBuffer commandBuffer);
+        [DllImport("*")]
+        public static extern void wgpu_queue_submit_one(WGpuQueue queue, WGpuCommandBuffer commandBuffer);
         // Submits one command buffer to the given queue for rendering. The command buffer is destroyed after rendering by calling wgpu_object_destroy() on it.
         // (this is a helper function to help remind that wasm side references to WebGPU JS objects need to be destroyed or a reference leak occurs. See
         // function wgpu_get_num_live_objects() to help debug the number of live references)
@@ -2558,9 +2679,12 @@ namespace WebGpu
         //
         //         // Uploads data to the given GPUBuffer. Data is copied from memory in byte addresses data[0], data[1], ... data[size-1], and uploaded
         //         // to the GPU buffer at byte offset bufferOffset, bufferOffset+1, ..., bufferOffset+size-1.
-        //         void wgpu_queue_write_buffer(WGpuQueue queue, WGpuBuffer buffer, /*double_int53_tL */ double bufferOffset, const void* data NOTNULL, /*double_int53_tL */ double size);
+        [DllImport("*")]
+        public static extern void wgpu_queue_write_buffer(WGpuQueue queue, WGpuBuffer buffer, /*double_int53_tL */ long bufferOffset, void* data /*NOTNULL*/, /*double_int53_tL */ long size);
         //         void wgpu_queue_write_texture(WGpuQueue queue, const WGpuImageCopyTexture* destination NOTNULL, const void* data NOTNULL, int bytesPerBlockRow, int blockRowsPerImage, int writeWidth, int writeHeight _WGPU_DEFAULT_VALUE(1), int writeDepthOrArrayLayers _WGPU_DEFAULT_VALUE(1));
-        // void wgpu_queue_copy_external_image_to_texture(WGpuQueue queue, const WGpuImageCopyExternalImage* source NOTNULL, const WGpuImageCopyTextureTagged* destination NOTNULL, int copyWidth, int copyHeight _WGPU_DEFAULT_VALUE(1), int copyDepthOrArrayLayers _WGPU_DEFAULT_VALUE(1));
+        [DllImport("*")]
+        public static extern void wgpu_queue_copy_external_image_to_texture(WGpuQueue queue, ref WGpuImageCopyExternalImage source /*NOTNULL*/, ref WGpuImageCopyTextureTagged destination /*NOTNULL*/, int copyWidth, int copyHeight /*_WGPU_DEFAULT_VALUE(1)*/, 
+            int copyDepthOrArrayLayers /*_WGPU_DEFAULT_VALUE(1) */);
         //
         // /*
         // [Exposed=(Window, DedicatedWorker), SecureContext]
@@ -2663,7 +2787,7 @@ namespace WebGpu
         //         */
         //         typedef int WGPU_CANVAS_ALPHA_MODE;
         // #define WGPU_CANVAS_ALPHA_MODE_INVALID 0
-        // #define WGPU_CANVAS_ALPHA_MODE_OPAQUE 1
+        public const int WGPU_CANVAS_ALPHA_MODE_OPAQUE = 1;
         // #define WGPU_CANVAS_ALPHA_MODE_PREMULTIPLIED 2
         //
         //         /*
@@ -2805,9 +2929,10 @@ namespace WebGpu
         //         };
         //         typedef (sequence<double> or GPUColorDict) GPUColor;
         //         */
+        [StructLayout(LayoutKind.Sequential)]
         public struct WGpuColor
         {
-            double r, g, b, a;
+            public double r, g, b, a;
         }
         //
         // /*
@@ -2817,10 +2942,11 @@ namespace WebGpu
         // };
         // typedef (sequence<GPUIntegerCoordinate> or GPUOrigin2DDict) GPUOrigin2D;
         // */
-        // typedef struct WGpuOrigin2D
-        //         {
-        //             int x, y;
-        //         }
+        [StructLayout(LayoutKind.Sequential)]
+        public struct WGpuOrigin2D
+        {
+            int x, y;
+        };
         //         WGpuOrigin2D;
         //
         // /*
@@ -2831,10 +2957,11 @@ namespace WebGpu
         // };
         // typedef (sequence<GPUIntegerCoordinate> or GPUOrigin3DDict) GPUOrigin3D;
         // */
-        // typedef struct WGpuOrigin3D
-        //         {
-        //             int x, y, z;
-        //         }
+        [StructLayout(LayoutKind.Sequential)]
+        public struct WGpuOrigin3D
+                {
+                    int x, y, z;
+                }
         //         WGpuOrigin3D;
         //
         // ////////////////////////////////////////////////////////
@@ -2853,17 +2980,20 @@ namespace WebGpu
         // */
         [StructLayout(LayoutKind.Sequential)]
         public struct WGpuCanvasConfiguration
-                {
-                    public WGpuDevice device;
-                    /*WGPU_TEXTURE_FORMAT */
-                    public int format;
-                    /*WGPU_TEXTURE_USAGE_FLAGS */
-                    int usage;
-                    int numViewFormats;
-                    /* WGPU_TEXTURE_FORMAT* */ int* viewFormats;
-                    /* HTML_PREDEFINED_COLOR_SPACE */ int colorSpace;
-                    /* WGPU_CANVAS_ALPHA_MODE */ int alphaMode;
-                }
+        {
+            public WGpuDevice device;
+            /*WGPU_TEXTURE_FORMAT */
+            public int format;
+            /*WGPU_TEXTURE_USAGE_FLAGS */
+            int usage;
+            int numViewFormats;
+            /* WGPU_TEXTURE_FORMAT* */
+            int* viewFormats;
+            /* HTML_PREDEFINED_COLOR_SPACE */
+            int colorSpace;
+            /* WGPU_CANVAS_ALPHA_MODE */
+            public int alphaMode;
+        }
         // extern const WGpuCanvasConfiguration WGPU_CANVAS_CONFIGURATION_DEFAULT_INITIALIZER;
         [DllImport("*")]
         public static extern WGpuCanvasConfiguration GetWGPU_CANVAS_CONFIGURATION_DEFAULT_INITIALIZER();
@@ -2889,7 +3019,8 @@ namespace WebGpu
         {
             WGpuQuerySet querySet;
             int queryIndex;
-            /* WGPU_RENDER_PASS_TIMESTAMP_LOCATION */ int location;
+            /* WGPU_RENDER_PASS_TIMESTAMP_LOCATION */
+            int location;
         }
         //
         // /*
@@ -2905,15 +3036,16 @@ namespace WebGpu
         // */
         [StructLayout(LayoutKind.Sequential)]
         public struct WGpuRenderPassDescriptor
-                {
-                    public int numColorAttachments;
-                    public WGpuRenderPassColorAttachment* colorAttachments;
-                    WGpuRenderPassDepthStencilAttachment depthStencilAttachment;
-                    WGpuQuerySet occlusionQuerySet;
-                    /*double_int53_tL */ double maxDrawCount; // If set to zero, the default value (50000000) will be used.
-                    uint numTimestampWrites;
-                    WGpuRenderPassTimestampWrite* timestampWrites;
-                }
+        {
+            public int numColorAttachments;
+            public WGpuRenderPassColorAttachment* colorAttachments;
+            public WGpuRenderPassDepthStencilAttachment depthStencilAttachment;
+            public WGpuQuerySet occlusionQuerySet;
+            /*double_int53_tL */
+            double maxDrawCount; // If set to zero, the default value (50000000) will be used.
+            uint numTimestampWrites;
+            WGpuRenderPassTimestampWrite* timestampWrites;
+        }
 
         [StructLayout(LayoutKind.Explicit, Size = 24, CharSet = CharSet.Ansi)]
         public struct WGpuRenderPassColorAttachment
@@ -2923,23 +3055,22 @@ namespace WebGpu
             WGpuTextureView resolveTarget;
 
             [FieldOffset(8)]
-            /* WGPU_STORE_OP */ int storeOp; // Required, be sure to set to WGPU_STORE_OP_STORE (default) or WGPU_STORE_OP_DISCARD
+            public WGPU_STORE_OP storeOp; // Required, be sure to set to WGPU_STORE_OP_STORE (default) or WGPU_STORE_OP_DISCARD
             [FieldOffset(12)]
-            /* WGPU_LOAD_OP */ int loadOp; // Either WGPU_LOAD_OP_LOAD (== default, 0) or WGPU_LOAD_OP_CLEAR.
-            [FieldOffset(16)]
-            WGpuColor clearValue; // Used if loadOp == WGPU_LOAD_OP_CLEAR. Default value = { r = 0.0, g = 0.0, b = 0.0, a = 1.0 }
+            public WGPU_LOAD_OP loadOp; // Either WGPU_LOAD_OP_LOAD (== default, 0) or WGPU_LOAD_OP_CLEAR.
+            [FieldOffset(16)] public WGpuColor clearValue; // Used if loadOp == WGPU_LOAD_OP_CLEAR. Default value = { r = 0.0, g = 0.0, b = 0.0, a = 1.0 }
         }
 
         [DllImport("*")]
         public static extern WGpuRenderPassColorAttachment GetWGPU_RENDER_PASS_COLOR_ATTACHMENT_DEFAULT_INITIALIZER();
         //
-        //         typedef struct WGpuImageCopyExternalImage
-        //         {
-        //             WGpuObjectBase source; // must point to a WGpuImageBitmap (could also point to a HTMLVideoElement, HTMLCanvasElement or OffscreenCanvas, but those are currently unimplemented)
-        //             WGpuOrigin2D origin;
-        //             /* EM_BOOL */ int flipY; // defaults to EM_FALSE.
-        //         }
-        //         WGpuImageCopyExternalImage;
+        [StructLayout(LayoutKind.Sequential)]
+        public struct WGpuImageCopyExternalImage
+        {
+            public WGpuObjectBase source; // must point to a WGpuImageBitmap (could also point to a HTMLVideoElement, HTMLCanvasElement or OffscreenCanvas, but those are currently unimplemented)
+            public WGpuOrigin2D origin;
+            public /* EM_BOOL */ int flipY; // defaults to EM_FALSE.
+        }
         // extern const WGpuImageCopyExternalImage WGPU_IMAGE_COPY_EXTERNAL_IMAGE_DEFAULT_INITIALIZER;
         //
         //         typedef struct WGpuImageCopyTexture
@@ -2952,18 +3083,18 @@ namespace WebGpu
         //         WGpuImageCopyTexture;
         // extern const WGpuImageCopyTexture WGPU_IMAGE_COPY_TEXTURE_DEFAULT_INITIALIZER;
         //
-        //         typedef struct WGpuImageCopyTextureTagged
-        //         {
-        //             // WGpuImageCopyTexture part:
-        //             WGpuTexture texture;
-        //             int mipLevel;
-        //             WGpuOrigin3D origin;
-        //             WGPU_TEXTURE_ASPECT aspect;
-        //
-        //             HTML_PREDEFINED_COLOR_SPACE colorSpace; // = "srgb";
-        //             /* EM_BOOL */ int premultipliedAlpha; // = false;
-        //         }
-        //         WGpuImageCopyTextureTagged;
+        [StructLayout(LayoutKind.Sequential)]
+        public struct WGpuImageCopyTextureTagged
+        {
+            // WGpuImageCopyTexture part:
+            public WGpuTexture texture;
+            public int mipLevel;
+            public WGpuOrigin3D origin;
+            public WGPU_TEXTURE_ASPECT aspect;
+        
+            public HTML_PREDEFINED_COLOR_SPACE colorSpace; // = "srgb";
+            public /* EM_BOOL */ int premultipliedAlpha; // = false;
+        }
         // extern const WGpuImageCopyTextureTagged WGPU_IMAGE_COPY_TEXTURE_TAGGED_DEFAULT_INITIALIZER;
         //
         [StructLayout(LayoutKind.Sequential)]
@@ -2971,44 +3102,48 @@ namespace WebGpu
         {
             // Pass format == WGPU_TEXTURE_FORMAT_INVALID (integer value 0)
             // to disable depth+stenciling altogether.
-            /* WGPU_TEXTURE_FORMAT */ int format;
-        
-            /* EM_BOOL */ int depthWriteEnabled;
-            /* WGPU_COMPARE_FUNCTION */ int depthCompare;
-        
+            public WGPU_TEXTURE_FORMAT format;
+
+            /* EM_BOOL */
+            public int depthWriteEnabled;
+            public WGPU_COMPARE_FUNCTION depthCompare;
+
             int stencilReadMask;
             int stencilWriteMask;
-        
+
             int depthBias;
             float depthBiasSlopeScale;
             float depthBiasClamp;
-        
+
             WGpuStencilFaceState stencilFront;
             WGpuStencilFaceState stencilBack;
-        
+
             // Enable depth clamping (requires "depth-clamping" feature)
-            /* EM_BOOL */ int clampDepth;
+            /* EM_BOOL */
+            int clampDepth;
         }
         //
+        [StructLayout(LayoutKind.Sequential)]
         public struct WGpuBlendState
-                {
-                    WGpuBlendComponent color;
-                    WGpuBlendComponent alpha;
-                }
-        
+        {
+            public WGpuBlendComponent color;
+            public WGpuBlendComponent alpha;
+        }
+
         [StructLayout(LayoutKind.Sequential)]
         public struct WGpuColorTargetState
-                {
-                    /* WGPU_TEXTURE_FORMAT */
-                    public int format;
-        
-                    // The member field blend.operation is default initialized to WGPU_BLEND_OPERATION_DISABLED (integer value 0)
-                    // to disable alpha blending on this color target. Set blend.operation to e.g. WGPU_BLEND_OPERATION_ADD to enable
-                    // alpha blending.
-                    WGpuBlendState blend;
-        
-                    /* WGPU_COLOR_WRITE_FLAGS */ int writeMask;
-                }
+        {
+            /* WGPU_TEXTURE_FORMAT */
+            public int format;
+
+            // The member field blend.operation is default initialized to WGPU_BLEND_OPERATION_DISABLED (integer value 0)
+            // to disable alpha blending on this color target. Set blend.operation to e.g. WGPU_BLEND_OPERATION_ADD to enable
+            // alpha blending.
+            public WGpuBlendState blend;
+
+            /* WGPU_COLOR_WRITE_FLAGS */
+            int writeMask;
+        }
         // extern const WGpuColorTargetState WGPU_COLOR_TARGET_STATE_DEFAULT_INITIALIZER;
         [DllImport("*")]
         public static extern WGpuColorTargetState GetWGPU_COLOR_TARGET_STATE_DEFAULT_INITIALIZER();
@@ -3017,33 +3152,43 @@ namespace WebGpu
         public struct WGpuRenderPipelineDescriptor
         {
             public WGpuVertexState vertex;
-            WGpuPrimitiveState primitive;
-            WGpuDepthStencilState depthStencil;
-            WGpuMultisampleState multisample;
+            public WGpuPrimitiveState primitive;
+            public WGpuDepthStencilState depthStencil;
+            public WGpuMultisampleState multisample;
             public WGpuFragmentState fragment;
-            WGpuPipelineLayout layout; // Set to special value WGPU_AUTO_LAYOUT_MODE_AUTO to specify that automatic layout should be used.
+            public WGpuPipelineLayout layout; // Set to special value WGPU_AUTO_LAYOUT_MODE_AUTO to specify that automatic layout should be used.
         }
         // extern const WGpuRenderPipelineDescriptor WGPU_RENDER_PIPELINE_DESCRIPTOR_DEFAULT_INITIALIZER;
         [DllImport("*")]
         public static extern WGpuRenderPipelineDescriptor GetWGPU_RENDER_PIPELINE_DESCRIPTOR_DEFAULT_INITIALIZER();
         //
-        //         typedef struct WGpuBindGroupLayoutEntry
-        //         {
-        //             int binding;
-        //             WGPU_SHADER_STAGE_FLAGS visibility;
-        //             WGPU_BIND_GROUP_LAYOUT_TYPE type;
-        //             int _dummyPadding64Bits; // Explicitly present to pad 'buffer' to 64-bit alignment
-        //
-        //             union {
-        //     WGpuBufferBindingLayout buffer;
-        //             WGpuSamplerBindingLayout sampler;
-        //             WGpuTextureBindingLayout texture;
-        //             WGpuStorageTextureBindingLayout storageTexture;
-        //             WGpuExternalTextureBindingLayout externalTexture;
-        //         }
-        //         layout;
-        // }
-        //     WGpuBindGroupLayoutEntry;
+
+        [StructLayout(LayoutKind.Explicit)]
+        public struct WGpuBindGroupLayoutEntryLayoutUnion
+        {
+            [FieldOffset(0)]
+            public WGpuBufferBindingLayout buffer;
+            [FieldOffset(0)]
+            public WGpuSamplerBindingLayout sampler;
+            [FieldOffset(0)]
+            public WGpuTextureBindingLayout texture;
+            [FieldOffset(0)]
+            public WGpuStorageTextureBindingLayout storageTexture;
+            [FieldOffset(0)]
+            public WGpuExternalTextureBindingLayout externalTexture;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct WGpuBindGroupLayoutEntry
+        {
+            public int binding;
+            public WGPU_SHADER_STAGE_FLAGS visibility;
+            public WGPU_BIND_GROUP_LAYOUT_TYPE type;
+            public int _dummyPadding64Bits; // Explicitly present to pad 'buffer' to 64-bit alignment
+
+            public WGpuBindGroupLayoutEntryLayoutUnion layout;
+        }
+
         // extern const WGpuBindGroupLayoutEntry WGPU_BUFFER_BINDING_LAYOUT_ENTRY_DEFAULT_INITIALIZER;
         //
         //     ////////////////////////////////////////////////////////////////
@@ -3051,10 +3196,11 @@ namespace WebGpu
         //
         //     typedef WGpuObjectBase WGpuImageBitmap;
         //
-        // // Called when the ImageBitmap finishes loading. If loading fails, this callback will be called with width==height==0.
+        // Called when the ImageBitmap finishes loading. If loading fails, this callback will be called with width==height==0.
         // typedef void (* WGpuLoadImageBitmapCallback) (WGpuImageBitmap bitmap, int width, int height, void* userData);
         //
-        // void wgpu_load_image_bitmap_from_url_async(const char* url NOTNULL, /* EM_BOOL */ int flipY, WGpuLoadImageBitmapCallback callback, void* userData);
+        [DllImport("*", CallingConvention  = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        public static extern void wgpu_load_image_bitmap_from_url_async(string url /*NOTNULL*/, /* EM_BOOL */ int flipY, delegate* unmanaged<WGpuImageBitmap, int, int, IntPtr, void> callback, IntPtr userData);
         //
         //
         // #ifdef __cplusplus
