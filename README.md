@@ -29,4 +29,5 @@ Compile from the `Triangle` folder with
 dotnet publish --self-contained -r browser-wasm /p:MSBuildEnableWorkloadResolver=false
 ```
 
-And serve with any web server.  Use Chrome for Developer (or Edge Canary) with WebGPU enabled to view.  WebGPU is currently behind a flag in Chrome, see https://developer.chrome.com/docs/web-platform/webgpu/ to turn it on.
+And serve with any web server, for example using command `npx http-server bin/Debug/net7.0/browser-wasm/publish/`.  Use Chrome with WebGPU enabled to view.  WebGPU is currently behind a flag in Chrome, see https://developer.chrome.com/docs/web-platform/webgpu/ to turn it on.
+
