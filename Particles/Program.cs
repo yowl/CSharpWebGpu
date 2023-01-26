@@ -183,9 +183,17 @@ namespace WebGpuSample
 
             GCHandle.Alloc(targets);
 
-            renderPipelineDesc.fragment.targets =
-                (WGpuColorTargetState*)Marshal.UnsafeAddrOfPinnedArrayElement(targets, 0);
-            renderPipelineDesc.fragment.numTargets = targets.Length;
+            WGpuColorTargetState colorTarget = GetWGPU_COLOR_TARGET_STATE_DEFAULT_INITIALIZER();
+            colorTarget.format = config.format;
+            colorTarget.blend.color.operation = WGPU_BLEND_OPERATION.WGPU_BLEND_OPERATION_ADD;
+            colorTarget.blend.color.srcFactor = WGPU_BLEND_FACTOR.WGPU_BLEND_FACTOR_SRC_ALPHA;
+            colorTarget.blend.color.dstFactor = WGPU_BLEND_FACTOR.WGPU_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+            renderPipelineDesc.fragment.numTargets = 1;
+            renderPipelineDesc.fragment.targets = &colorTarget;
+
+            // renderPipelineDesc.fragment.targets =
+            //     (WGpuColorTargetState*)Marshal.UnsafeAddrOfPinnedArrayElement(targets, 0);
+            // renderPipelineDesc.fragment.numTargets = targets.Length;
 
             renderPipelineDesc.primitive.topology = WGPU_PRIMITIVE_TOPOLOGY.WGPU_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
             renderPipelineDesc.depthStencil.depthWriteEnabled = 0;
@@ -232,6 +240,8 @@ namespace WebGpuSample
                 (WGpuBindGroupEntry*)Marshal.UnsafeAddrOfPinnedArrayElement(bindGroupLayoutEntries, 0), 1);
 
             renderPassDescriptor = default;
+
+
             colorAttachments = new WGpuRenderPassColorAttachment[1];
             colorAttachments[0].view = new WGpuTextureView(0); // undefined, assigned later
             colorAttachments[0].clearValue.r = 0;
@@ -280,7 +290,7 @@ namespace WebGpuSample
             wgpu_buffer_unmap(quadVertexBuffer);
 
             Console.WriteLine("loading bitmap");
-            wgpu_load_image_bitmap_from_url_async("webgpu.png", 1, &DownloadedImage, IntPtr.Zero);
+            wgpu_load_image_bitmap_from_url_async("webgpu_upside_down.png", 1, &DownloadedImage, IntPtr.Zero);
         }
 
         //////////////////////////////////////////////////////////////////////////////

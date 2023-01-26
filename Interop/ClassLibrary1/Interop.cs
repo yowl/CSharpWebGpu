@@ -1855,6 +1855,7 @@ namespace WebGpu
             WGPU_BLEND_FACTOR_ZERO = 1,
             WGPU_BLEND_FACTOR_ONE = 2,
             WGPU_BLEND_FACTOR_SRC_ALPHA = 5,
+            WGPU_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA = 6,
 
         }
         // #define WGPU_BLEND_FACTOR_INVALID 0
