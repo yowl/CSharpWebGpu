@@ -1,4 +1,4 @@
-﻿#include "E:/GitHub/wasm_webgpu/lib/lib_webgpu.h"
+﻿#include <lib_webgpu.h>
 #include <emscripten.h>
 
 WGpuRenderPipelineDescriptor GetWGPU_RENDER_PIPELINE_DESCRIPTOR_DEFAULT_INITIALIZER()
