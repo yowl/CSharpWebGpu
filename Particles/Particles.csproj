@@ -16,4 +16,9 @@
 		<PackageReference Include="Microsoft.DotNet.ILCompiler.LLVM" Version="7.0.0-*" />
 		<PackageReference Include="runtime.win-x64.Microsoft.DotNet.ILCompiler.LLVM" Version="7.0.0-*" />
 	</ItemGroup>
+	<ItemGroup>
+	  <None Update="webgpu.png">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	</ItemGroup>
 </Project>

@@ -92,7 +92,8 @@ namespace WebGpu
         //         // Note that deleting a GPUTexture will also delete all GPUTextureViews that have been created from it.
         //         // Similar to free(), calling wgpu_object_destroy() on null, or an object that has already been destroyed before is safe, and no-op. (so no need to
         //         // do excess "if (wgpuObject) wgpu_object_destroy(wgpuObject);")
-        //         void wgpu_object_destroy(WGpuObjectBase wgpuObject);
+        [DllImport("*")]
+        public static extern void wgpu_object_destroy(WGpuObjectBase wgpuObject);
         //
         //         // Deinitializes all initialized WebGPU objects.
         //         void wgpu_destroy_all_objects(void);
@@ -328,7 +329,8 @@ namespace WebGpu
         //         WGpuAdapter navigator_gpu_request_adapter_sync(const WGpuRequestAdapterOptions* options);
         //
         //         // Like above, but tiny code size without options.
-        //         void navigator_gpu_request_adapter_async_simple(WGpuRequestAdapterCallback adapterCallback);
+        // [DllImport("*")]
+        // public static extern void navigator_gpu_request_adapter_async_simple(WGpuRequestAdapterCallback adapterCallback);
         //         WGpuAdapter navigator_gpu_request_adapter_sync_simple(void);
         //
         [DllImport("*")]
@@ -511,7 +513,7 @@ namespace WebGpu
         [DllImport("*")]
         public static extern WGpuBindGroup wgpu_device_create_bind_group(WGpuDevice device, WGpuBindGroupLayout bindGroupLayout, WGpuBindGroupEntry* entries, int numEntries);
         //
-        [DllImport("*")]
+        [DllImport("*", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
         public static extern WGpuShaderModule wgpu_device_create_shader_module(WGpuDevice device, ref WGpuShaderModuleDescriptor shaderModuleDesc /*NOTNULL*/);
         //
         // typedef void (* WGpuCreatePipelineCallback) (WGpuDevice device, WGpuPipelineBase pipeline, void* userData);
@@ -721,6 +723,8 @@ namespace WebGpu
             public WGPU_TEXTURE_FORMAT* viewFormats;
         }
         // extern const WGpuTextureDescriptor WGPU_TEXTURE_DESCRIPTOR_DEFAULT_INITIALIZER;
+        [DllImport("*")]
+        public static extern WGpuTextureDescriptor GetWGPU_TEXTURE_DESCRIPTOR_DEFAULT_INITIALIZER();
         //
         //         /*
         //         enum GPUTextureDimension {
@@ -1504,6 +1508,7 @@ namespace WebGpu
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
         public struct WGpuShaderModuleDescriptor
         {
+            [MarshalAs(UnmanagedType.LPStr)]
             public string code;
             // TODO: add sourceMap support
             public int numHints;
@@ -1624,9 +1629,9 @@ namespace WebGpu
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
         public struct WGpuPipelineConstant
         {
-            string name;
-            int _dummyPadding; // (would be automatically inserted by the compiler, but present here for explicity)
-            double value;
+            public string name;
+            public int _dummyPadding; // (would be automatically inserted by the compiler, but present here for explicity)
+            public double value;
         }
         //
         // /*
@@ -2058,10 +2063,10 @@ namespace WebGpu
         {
             public WGpuShaderModule module;
             public string entryPoint;
-            int numBuffers;
+            public int numBuffers;
             public WGpuVertexBufferLayout* buffers;
-            int numConstants;
-            WGpuPipelineConstant* constants;
+            public int numConstants;
+            public WGpuPipelineConstant* constants;
         }
         //
         // /*
@@ -2410,10 +2415,10 @@ namespace WebGpu
         // #define wgpu_render_commands_mixin_set_pipeline wgpu_encoder_set_pipeline
         //         void wgpu_render_commands_mixin_set_index_buffer(WGpuRenderCommandsMixin renderCommandsMixin, WGpuBuffer buffer, WGPU_INDEX_FORMAT indexFormat, /*double_int53_tL */ double offset _WGPU_DEFAULT_VALUE(0), /*double_int53_tL */ double size _WGPU_DEFAULT_VALUE(-1));
         [DllImport("*")]
-        public static extern void wgpu_render_commands_mixin_set_vertex_buffer(WGpuRenderCommandsMixin renderCommandsMixin, int slot, WGpuBuffer buffer, /*double_int53_tL */ long offset  = 0/*_WGPU_DEFAULT_VALUE(0)*/, /*double_int53_tL */ long size = -1 /*_WGPU_DEFAULT_VALUE(-1)*/);
+        public static extern void wgpu_render_commands_mixin_set_vertex_buffer(WGpuRenderCommandsMixin renderCommandsMixin, int slot, WGpuBuffer buffer, /*double_int53_tL */ double offset  = 0/*_WGPU_DEFAULT_VALUE(0)*/, /*double_int53_tL */ double size = -1 /*_WGPU_DEFAULT_VALUE(-1)*/);
 
         [DllImport("*", EntryPoint = "wgpu_render_commands_mixin_set_vertex_buffer")]
-        public static extern void wgpu_render_pass_encoder_set_vertex_buffer(WGpuRenderCommandsMixin renderCommandsMixin, int slot, WGpuBuffer buffer, /*double_int53_tL */ long offset  = 0/*_WGPU_DEFAULT_VALUE(0)*/, /*double_int53_tL */ long size = -1 /*_WGPU_DEFAULT_VALUE(-1)*/);
+        public static extern void wgpu_render_pass_encoder_set_vertex_buffer(WGpuRenderCommandsMixin renderCommandsMixin, int slot, WGpuBuffer buffer, /*double_int53_tL */ double offset  = 0/*_WGPU_DEFAULT_VALUE(0)*/, /*double_int53_tL */ double size = -1 /*_WGPU_DEFAULT_VALUE(-1)*/);
 
         //
         [DllImport("*")]
@@ -2680,7 +2685,7 @@ namespace WebGpu
         //         // Uploads data to the given GPUBuffer. Data is copied from memory in byte addresses data[0], data[1], ... data[size-1], and uploaded
         //         // to the GPU buffer at byte offset bufferOffset, bufferOffset+1, ..., bufferOffset+size-1.
         [DllImport("*")]
-        public static extern void wgpu_queue_write_buffer(WGpuQueue queue, WGpuBuffer buffer, /*double_int53_tL */ long bufferOffset, void* data /*NOTNULL*/, /*double_int53_tL */ long size);
+        public static extern void wgpu_queue_write_buffer(WGpuQueue queue, WGpuBuffer buffer, /*double_int53_tL */ double bufferOffset, void* data /*NOTNULL*/, /*double_int53_tL */ double size);
         //         void wgpu_queue_write_texture(WGpuQueue queue, const WGpuImageCopyTexture* destination NOTNULL, const void* data NOTNULL, int bytesPerBlockRow, int blockRowsPerImage, int writeWidth, int writeHeight _WGPU_DEFAULT_VALUE(1), int writeDepthOrArrayLayers _WGPU_DEFAULT_VALUE(1));
         [DllImport("*")]
         public static extern void wgpu_queue_copy_external_image_to_texture(WGpuQueue queue, ref WGpuImageCopyExternalImage source /*NOTNULL*/, ref WGpuImageCopyTextureTagged destination /*NOTNULL*/, int copyWidth, int copyHeight /*_WGPU_DEFAULT_VALUE(1)*/, 
@@ -3047,18 +3052,14 @@ namespace WebGpu
             WGpuRenderPassTimestampWrite* timestampWrites;
         }
 
-        [StructLayout(LayoutKind.Explicit, Size = 24, CharSet = CharSet.Ansi)]
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
         public struct WGpuRenderPassColorAttachment
         {
-            [FieldOffset(0)] public WGpuTextureView view;
-            [FieldOffset(4)]
+            public WGpuTextureView view;
             WGpuTextureView resolveTarget;
-
-            [FieldOffset(8)]
             public WGPU_STORE_OP storeOp; // Required, be sure to set to WGPU_STORE_OP_STORE (default) or WGPU_STORE_OP_DISCARD
-            [FieldOffset(12)]
             public WGPU_LOAD_OP loadOp; // Either WGPU_LOAD_OP_LOAD (== default, 0) or WGPU_LOAD_OP_CLEAR.
-            [FieldOffset(16)] public WGpuColor clearValue; // Used if loadOp == WGPU_LOAD_OP_CLEAR. Default value = { r = 0.0, g = 0.0, b = 0.0, a = 1.0 }
+            public WGpuColor clearValue; // Used if loadOp == WGPU_LOAD_OP_CLEAR. Default value = { r = 0.0, g = 0.0, b = 0.0, a = 1.0 }
         }
 
         [DllImport("*")]
