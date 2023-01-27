@@ -7,7 +7,7 @@
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <WasmWebGpuBuild>$(MSBuildThisFileDirectory)..\..\wasm_webgpu\</WasmWebGpuBuild>
-      <EmccExtraArgs>$(WasmWebGpuBuild)build\libwebgpu.a -I$(WasmWebGpuBuild)lib\ --js-library $(WasmWebGpuBuild)lib\lib_webgpu.js ..\Interop\ClassLibrary1\constants.c -s USE_SDL=0</EmccExtraArgs>
+      <EmccExtraArgs>$(WasmWebGpuBuild)build\libwebgpu.a -I$(WasmWebGpuBuild)lib\ --js-library $(WasmWebGpuBuild)lib\lib_webgpu.js ..\Interop\ClassLibrary1\constants.c -s USE_SDL=0 --shell-file=$(MSBuildThisFileDirectory)shell_minimal.html</EmccExtraArgs>
   </PropertyGroup>
 
   <ItemGroup>
