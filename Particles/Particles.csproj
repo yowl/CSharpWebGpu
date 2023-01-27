@@ -6,7 +6,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-	  <EmccExtraArgs>E:\GitHub\wasm_webgpu\build\libwebgpu.a --js-library E:\GitHub\wasm_webgpu\lib\lib_webgpu.js ..\Interop\ClassLibrary1\constants.c -s USE_SDL=0</EmccExtraArgs>
+    <WasmWebGpuBuild>$(MSBuildThisFileDirectory)..\..\wasm_webgpu\</WasmWebGpuBuild>
+      <EmccExtraArgs>$(WasmWebGpuBuild)build\libwebgpu.a -I$(WasmWebGpuBuild)lib\ --js-library $(WasmWebGpuBuild)lib\lib_webgpu.js ..\Interop\ClassLibrary1\constants.c -s USE_SDL=0</EmccExtraArgs>
   </PropertyGroup>
 
   <ItemGroup>
